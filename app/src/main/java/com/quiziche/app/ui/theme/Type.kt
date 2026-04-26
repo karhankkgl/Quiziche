@@ -1,4 +1,4 @@
-package com.example.quiziche_app.ui.theme
+package com.quiziche.app.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

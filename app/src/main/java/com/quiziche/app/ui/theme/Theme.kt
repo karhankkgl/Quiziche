@@ -1,4 +1,4 @@
-package com.example.quiziche_app.ui.theme
+package com.quiziche.app.ui.theme
 
 import android.app.Activity
 import android.os.Build
