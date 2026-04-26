@@ -37,6 +37,7 @@ fun LoginScreen(
 ) {
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -203,7 +204,7 @@ fun LoginScreen(
 
             // Google Sign In
             OutlinedButton(
-                onClick = { /* TODO */ },
+                onClick = { android.widget.Toast.makeText(context, "Google Login yakında eklenecek!", android.widget.Toast.LENGTH_SHORT).show() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

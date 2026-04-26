@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ViewModule
@@ -51,7 +52,8 @@ fun MainMenuScreen(
     onNavigateToOngoingGames: () -> Unit,
     onNavigateToGameSettings: () -> Unit,
     onNavigateToLeaderboard: () -> Unit,
-    onNavigateToGame: (roomId: String) -> Unit
+    onNavigateToGame: (roomId: String) -> Unit,
+    onNavigateToFriends: () -> Unit
 ) {
     val authRepository = remember { AuthRepository() }
     val userRepository = remember { UserRepository() }
@@ -103,7 +105,10 @@ fun MainMenuScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onNavigateToProfile() }
+                ) {
                     Box(
                         modifier = Modifier
                             .size(48.dp)
@@ -312,7 +317,7 @@ fun MainMenuScreen(
                         .padding(bottom = 8.dp)
                 ) {
                     ongoingGames.forEach { game ->
-                        OngoingGameCard(game)
+                        OngoingGameCard(game, onNavigateToGame)
                         Spacer(modifier = Modifier.width(16.dp))
                     }
                 }
@@ -388,9 +393,9 @@ fun MainMenuScreen(
                     badgeCount = 2
                 )
                 BottomNavItem(
-                    icon = Icons.Default.Person,
-                    label = "Profile",
-                    onClick = onNavigateToProfile
+                    icon = Icons.Default.People,
+                    label = "Friends",
+                    onClick = onNavigateToFriends
                 )
             }
         }
@@ -398,7 +403,7 @@ fun MainMenuScreen(
 }
 
 @Composable
-fun OngoingGameCard(game: OngoingGame) {
+fun OngoingGameCard(game: OngoingGame, onNavigateToGame: (String) -> Unit) {
     val isYourTurn = game.status == "Your Turn"
     Surface(
         shape = RoundedCornerShape(24.dp),
@@ -458,7 +463,7 @@ fun OngoingGameCard(game: OngoingGame) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = { if (isYourTurn) onNavigateToGame(game.id.toString()) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isYourTurn) Color.White else Color(0xFFF3F4F6)

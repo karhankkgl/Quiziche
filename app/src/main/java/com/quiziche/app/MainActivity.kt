@@ -74,13 +74,19 @@ fun QuizicheApp() {
                 onNavigateToOngoingGames = { navController.navigate("ongoing_games") },
                 onNavigateToGameSettings = { navController.navigate("game_settings") },
                 onNavigateToLeaderboard = { navController.navigate("leaderboard") },
-                onNavigateToGame = { _ -> navController.navigate("game") }
+                onNavigateToGame = { _ -> navController.navigate("game") },
+                onNavigateToFriends = { navController.navigate("friends") }
             )
         }
         composable("leaderboard") {
             LeaderboardScreen(
                 onNavigateBack = { navController.popBackStack() },
                 currentUserName = "Player" // Replace with real name logic if needed or let LeaderboardScreen fetch it
+            )
+        }
+        composable("friends") {
+            FriendsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         composable("profile") {
@@ -104,15 +110,20 @@ fun QuizicheApp() {
             CategoryDetailsScreen(
                 categoryId = categoryId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToGameSettings = { navController.navigate("game_settings") }
+                onNavigateToGameSettings = { navController.navigate("game_settings?category=$categoryId") }
             )
         }
-        composable("game_settings") {
+        composable(
+            route = "game_settings?category={category}",
+            arguments = listOf(navArgument("category") { defaultValue = "all" })
+        ) { backStackEntry ->
+            val category = backStackEntry.arguments?.getString("category") ?: "all"
             GameSettingsScreen(
+                initialCategory = category,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToNext = { mode ->
+                onNavigateToNext = { mode, selectedCat ->
                     if (mode == "solo") {
-                        navController.navigate("game?mode=solo")
+                        navController.navigate("game?mode=solo&category=$selectedCat")
                     } else {
                         navController.navigate("matchmaking")
                     }
@@ -126,31 +137,38 @@ fun QuizicheApp() {
             )
         }
         composable(
-            route = "game?mode={mode}",
-            arguments = listOf(navArgument("mode") { defaultValue = "multiplayer" })
+            route = "game?mode={mode}&category={category}",
+            arguments = listOf(
+                navArgument("mode") { defaultValue = "multiplayer" },
+                navArgument("category") { defaultValue = "all" }
+            )
         ) { backStackEntry ->
             val mode = backStackEntry.arguments?.getString("mode") ?: "multiplayer"
+            val category = backStackEntry.arguments?.getString("category") ?: "all"
             val isSingleplayer = mode == "solo"
             GameScreen(
                 isSingleplayer = isSingleplayer,
+                category = category,
                 onNavigateToResults = { score, totalQuestions, isWinner -> 
-                    navController.navigate("results/$score/$totalQuestions/$isSingleplayer/$isWinner") 
+                    navController.navigate("results/$score/$totalQuestions/$isSingleplayer/$isWinner/$category") 
                 }
             )
         }
         composable(
-            route = "results/{score}/{totalQuestions}/{isSingleplayer}/{isWinner}",
+            route = "results/{score}/{totalQuestions}/{isSingleplayer}/{isWinner}/{category}",
             arguments = listOf(
                 navArgument("score") { type = NavType.IntType },
                 navArgument("totalQuestions") { type = NavType.IntType },
                 navArgument("isSingleplayer") { type = NavType.BoolType },
-                navArgument("isWinner") { type = NavType.BoolType }
+                navArgument("isWinner") { type = NavType.BoolType },
+                navArgument("category") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val score = backStackEntry.arguments?.getInt("score") ?: 0
             val totalQuestions = backStackEntry.arguments?.getInt("totalQuestions") ?: 5
             val isSingleplayer = backStackEntry.arguments?.getBoolean("isSingleplayer") ?: false
             val isWinner = backStackEntry.arguments?.getBoolean("isWinner") ?: false
+            val category = backStackEntry.arguments?.getString("category") ?: "all"
 
             GameResultsScreen(
                 score = score,
@@ -160,7 +178,15 @@ fun QuizicheApp() {
                 onNavigateToMainMenu = { navController.navigate("main_menu") {
                     popUpTo("main_menu") { inclusive = true }
                 } },
-                onNavigateToRematch = { navController.navigate("matchmaking") }
+                onNavigateToRematch = { 
+                    if (isSingleplayer) {
+                        navController.navigate("game?mode=solo&category=$category") {
+                            popUpTo("main_menu")
+                        }
+                    } else {
+                        navController.navigate("matchmaking") 
+                    }
+                }
             )
         }
         composable("ongoing_games") {

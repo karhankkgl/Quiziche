@@ -38,6 +38,7 @@ fun RegisterScreen(
 ) {
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -272,7 +273,7 @@ fun RegisterScreen(
 
             // Google Sign Up
             OutlinedButton(
-                onClick = { /* TODO */ },
+                onClick = { android.widget.Toast.makeText(context, "Sosyal giriş yakında eklenecek!", android.widget.Toast.LENGTH_SHORT).show() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

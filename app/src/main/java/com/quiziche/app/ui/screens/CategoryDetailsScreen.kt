@@ -37,7 +37,13 @@ fun CategoryDetailsScreen(
         "science" to Category("science", "Science", "🔬", listOf(Color(0xFF60A5FA), Color(0xFF06B6D4))),
         "history" to Category("history", "History", "📚", listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
         "sports" to Category("sports", "Sports", "⚽", listOf(Color(0xFF4ADE80), Color(0xFF10B981))),
-        "art" to Category("art", "Art", "🎨", listOf(Color(0xFFF472B6), Color(0xFFE11D48)))
+        "art" to Category("art", "Art", "🎨", listOf(Color(0xFFF472B6), Color(0xFFE11D48))),
+        "music" to Category("music", "Music", "🎵", listOf(Color(0xFFA78BFA), Color(0xFF6366F1))),
+        "geography" to Category("geography", "Geography", "🌍", listOf(Color(0xFF2DD4BF), Color(0xFF0891B2))),
+        "movies" to Category("movies", "Movies", "🎬", listOf(Color(0xFFF87171), Color(0xFFEC4899))),
+        "literature" to Category("literature", "Literature", "📖", listOf(Color(0xFF818CF8), Color(0xFFA855F7))),
+        "technology" to Category("technology", "Technology", "💻", listOf(Color(0xFF94A3B8), Color(0xFF475569))),
+        "food" to Category("food", "Food & Drink", "🍕", listOf(Color(0xFFFACC15), Color(0xFFEA580C)))
     )
 
     val category = categoryData[categoryId] ?: categoryData["science"]!!

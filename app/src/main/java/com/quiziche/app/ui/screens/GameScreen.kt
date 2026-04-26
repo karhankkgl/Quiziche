@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameScreen(
     isSingleplayer: Boolean = false,
+    category: String = "all",
     onNavigateToResults: (score: Int, totalQuestions: Int, isWinner: Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -53,13 +54,14 @@ fun GameScreen(
     var selectedAnswer by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
-        if (isSingleplayer) {
-            val result = quizRepository.getQuestionsByCategory("all", 5)
-            if (result.isSuccess) {
-                questions = result.getOrDefault(emptyList()).shuffled().take(5)
-            }
-            isLoading = false
+        if (!isSingleplayer) {
+            delay(1500) // Small delay to simulate multiplayer setup
         }
+        val result = quizRepository.getQuestionsByCategory(category, 5)
+        if (result.isSuccess) {
+            questions = result.getOrDefault(emptyList()).shuffled().take(5)
+        }
+        isLoading = false
     }
 
     val currentQuestion = questions.getOrNull(currentQuestionIndex)
@@ -80,13 +82,14 @@ fun GameScreen(
                     scope.launch {
                         authRepository.currentUserUID?.let { uid ->
                             val won = userScore > 2
-                            userRepository.updateStats(uid, won, "General", xpEarned = userScore * 10, coinsEarned = userScore * 5, isSingleplayer = isSingleplayer)
+                            val displayCategory = category.replaceFirstChar { it.uppercase() }
+                            userRepository.updateStats(uid, won, displayCategory, xpEarned = userScore * 10, coinsEarned = userScore * 5, isSingleplayer = isSingleplayer)
                             val matchData = mapOf(
                                 "opponentIcon" to "🤖",
                                 "opponentName" to if (isSingleplayer) "Solo Bot" else "Player 2",
                                 "result" to if (won) "won" else "lost",
                                 "score" to if (isSingleplayer) "$userScore" else "$userScore - ${5 - userScore}",
-                                "category" to "General",
+                                "category" to displayCategory,
                                 "timestamp" to System.currentTimeMillis()
                             )
                             userRepository.saveMatchResult(uid, matchData)
@@ -113,13 +116,14 @@ fun GameScreen(
                 scope.launch {
                     authRepository.currentUserUID?.let { uid ->
                         val won = userScore > 2
-                        userRepository.updateStats(uid, won, "General", xpEarned = userScore * 10, coinsEarned = userScore * 5, isSingleplayer = isSingleplayer)
+                        val displayCategory = category.replaceFirstChar { it.uppercase() }
+                        userRepository.updateStats(uid, won, displayCategory, xpEarned = userScore * 10, coinsEarned = userScore * 5, isSingleplayer = isSingleplayer)
                         val matchData = mapOf(
                             "opponentIcon" to "🤖",
                             "opponentName" to if (isSingleplayer) "Solo Bot" else "Player 2",
                             "result" to if (won) "won" else "lost",
                             "score" to if (isSingleplayer) "$userScore" else "$userScore - ${5 - userScore}",
-                            "category" to "General",
+                            "category" to displayCategory,
                             "timestamp" to System.currentTimeMillis()
                         )
                         userRepository.saveMatchResult(uid, matchData)
@@ -130,9 +134,25 @@ fun GameScreen(
         }
     }
 
-    if (isLoading || currentQuestion == null) {
+    if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = QuizichePurple700)
+        }
+        return
+    }
+
+    if (questions.isEmpty() || currentQuestion == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("No questions found for this category.", color = Color.White, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { onNavigateToResults(0, 0, false) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Text("Return", color = QuizichePurple700)
+                }
+            }
         }
         return
     }
@@ -224,7 +244,7 @@ fun GameScreen(
                     border = BorderStroke(1.dp, Color(0xFF60A5FA).copy(alpha = 0.5f))
                 ) {
                     Text(
-                        text = "🔬 Science",
+                        text = "🔬 ${category.replaceFirstChar { it.uppercase() }}",
                         color = Color(0xFFDBEAFE),
                         fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)

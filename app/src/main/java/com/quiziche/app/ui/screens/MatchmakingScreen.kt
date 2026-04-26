@@ -37,8 +37,12 @@ fun MatchmakingScreen(
     LaunchedEffect(Unit) {
         gameRepository.joinMatchmaking(category = "General") { roomId ->
             isSearching = false
-            // Usually we'd pass the roomId to the game screen, but since the signature
-            // is `onNavigateToGame()`, we just call it.
+            onNavigateToGame()
+        }
+        delay(3000)
+        if (isSearching) {
+            isSearching = false
+            gameRepository.cancelMatchmaking("General")
             onNavigateToGame()
         }
     }

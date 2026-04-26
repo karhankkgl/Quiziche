@@ -27,6 +27,7 @@ import com.quiziche.app.ui.theme.*
 fun ResetPasswordScreen(
     onNavigateBackToLogin: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -170,7 +171,7 @@ fun ResetPasswordScreen(
                 text = "Resend email",
                 color = Color.White,
                 textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { /* TODO */ }
+                modifier = Modifier.clickable { android.widget.Toast.makeText(context, "Kod tekrar gönderildi!", android.widget.Toast.LENGTH_SHORT).show() }
             )
         }
     }
