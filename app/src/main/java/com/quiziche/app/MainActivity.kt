@@ -71,7 +71,7 @@ fun QuizicheApp() {
             MainMenuScreen(
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToCategories = { navController.navigate("categories") },
-                onNavigateToOngoingGames = { navController.navigate("ongoing_games") },
+                onNavigateToOngoingGames = { navController.navigate("matchmaking/all") }, // Redirect to live matchmaking
                 onNavigateToGameSettings = { navController.navigate("game_settings") },
                 onNavigateToLeaderboard = { navController.navigate("leaderboard") },
                 onNavigateToGame = { _ -> navController.navigate("game") },
@@ -86,7 +86,12 @@ fun QuizicheApp() {
         }
         composable("friends") {
             FriendsScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToMainMenu = { navController.navigate("main_menu") {
+                    popUpTo("main_menu") { inclusive = true }
+                } },
+                onNavigateToCategories = { navController.navigate("categories") },
+                onNavigateToLeaderboard = { navController.navigate("leaderboard") }
             )
         }
         composable("profile") {
@@ -104,7 +109,12 @@ fun QuizicheApp() {
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToCategoryDetails = { categoryId ->
                     navController.navigate("category_details/$categoryId")
-                }
+                },
+                onNavigateToMainMenu = { navController.navigate("main_menu") {
+                    popUpTo("main_menu") { inclusive = true }
+                } },
+                onNavigateToFriends = { navController.navigate("friends") },
+                onNavigateToLeaderboard = { navController.navigate("leaderboard") }
             )
         }
         composable(
@@ -229,11 +239,6 @@ fun QuizicheApp() {
                 }
             )
         }
-        composable("ongoing_games") {
-            OngoingGamesScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToGame = { navController.navigate("game") }
-            )
-        }
+
     }
 }

@@ -130,7 +130,7 @@ fun LoginScreen(
                     .size(100.dp)
                     .clip(RoundedCornerShape(28.dp))
                     .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
-                    .border(4.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp)),
+                    .border(4.dp, Color(0xFF475569), RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text("🧠", fontSize = 52.sp)
@@ -213,7 +213,7 @@ fun LoginScreen(
                 },
                 isLoading = isLoading,
                 bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
-                textColor = Color(0xFF1E1B4B)
+                textColor = Color(0xFF475569)
             )
 
             Spacer(modifier = Modifier.height(18.dp))

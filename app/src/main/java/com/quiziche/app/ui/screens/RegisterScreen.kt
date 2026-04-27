@@ -80,15 +80,7 @@ fun RegisterScreen(
         ) {
             // Back
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(0.15f))
-                        .border(2.dp, Color.White.copy(0.3f), CircleShape)
-                        .clickable { onNavigateBack() },
-                    contentAlignment = Alignment.Center
-                ) { Text("←", fontSize = 20.sp, color = Color.White) }
+                ModernBackButton(onClick = onNavigateBack)
             }
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -98,7 +90,7 @@ fun RegisterScreen(
                     .size(90.dp)
                     .clip(CircleShape)
                     .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899))))
-                    .border(4.dp, Color(0xFF1E1B4B), CircleShape),
+                    .border(4.dp, Color(0xFF475569), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text("⭐", fontSize = 48.sp, modifier = Modifier.offset(y = bounce.dp * 0.5f))
@@ -155,7 +147,7 @@ fun RegisterScreen(
                 },
                 isLoading = isLoading,
                 bgBrush = Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFFFBBF24))),
-                textColor = Color(0xFF1E1B4B)
+                textColor = Color(0xFF475569)
             )
 
             Spacer(modifier = Modifier.height(24.dp))

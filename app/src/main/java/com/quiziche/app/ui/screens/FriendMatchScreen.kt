@@ -57,7 +57,7 @@ fun FriendMatchScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFF7ED), Color(0xFFFEF3C7), Color(0xFFFDE68A))))
+            .background(Brush.verticalGradient(listOf(Color(0xFFFDE68A), Color(0xFFFCD34D), Color(0xFFDDD6FE))))
     ) {
         // Decorations
         Text("⭐", fontSize = 22.sp, modifier = Modifier.offset(20.dp, 80.dp).rotate(starRotate), color = Color(0xFFF97316))
@@ -75,12 +75,7 @@ fun FriendMatchScreen(
         ) {
             // Back
             Row(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                    .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
-                    .clickable { if (mode != null) mode = null else onNavigateBack() },
-                    contentAlignment = Alignment.Center) {
-                    Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
-                }
+                ModernBackButton(onClick = { if (mode != null) mode = null else onNavigateBack() })
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -88,8 +83,8 @@ fun FriendMatchScreen(
             // Lion illustration
             Text("🦁", fontSize = 90.sp, modifier = Modifier.offset(y = lionBounce.dp))
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Friend Battle!", fontFamily = FredokaOne, fontSize = 36.sp, color = Color(0xFF1E1B4B), textAlign = TextAlign.Center)
-            Text("Category: ${category.replaceFirstChar { it.uppercase() }}", fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFF6B7280))
+            Text("Friend Battle!", fontFamily = FredokaOne, fontSize = 36.sp, color = Color.White, textAlign = TextAlign.Center)
+            Text("Category: ${category.replaceFirstChar { it.uppercase() }}", fontFamily = Fredoka, fontSize = 16.sp, color = Color.White.copy(0.6f))
             Spacer(modifier = Modifier.height(32.dp))
 
             when (mode) {
@@ -99,12 +94,12 @@ fun FriendMatchScreen(
                         // HOST
                         Box {
                             Box(modifier = Modifier.fillMaxWidth().offset(5.dp, 6.dp).height(90.dp)
-                                .clip(RoundedCornerShape(24.dp)).background(Color(0xFF1E1B4B)))
+                                .clip(RoundedCornerShape(24.dp)).background(Color(0xFF475569)))
                             Box(
                                 modifier = Modifier.fillMaxWidth().height(90.dp)
                                     .clip(RoundedCornerShape(24.dp))
                                     .background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24))))
-                                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                                    .border(3.dp, Color(0xFF475569), RoundedCornerShape(24.dp))
                                     .clickable { mode = "host" }
                                     .padding(20.dp)
                             ) {
@@ -121,12 +116,12 @@ fun FriendMatchScreen(
                         // JOIN
                         Box {
                             Box(modifier = Modifier.fillMaxWidth().offset(5.dp, 6.dp).height(90.dp)
-                                .clip(RoundedCornerShape(24.dp)).background(Color(0xFF1E1B4B)))
+                                .clip(RoundedCornerShape(24.dp)).background(Color(0xFF475569)))
                             Box(
                                 modifier = Modifier.fillMaxWidth().height(90.dp)
                                     .clip(RoundedCornerShape(24.dp))
                                     .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))))
-                                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                                    .border(3.dp, Color(0xFF475569), RoundedCornerShape(24.dp))
                                     .clickable { mode = "join" }
                                     .padding(20.dp)
                             ) {
@@ -177,7 +172,7 @@ fun FriendMatchScreen(
                             },
                             isLoading = isLoading,
                             bgBrush = Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24))),
-                            textColor = Color(0xFF1E1B4B)
+                            textColor = Color(0xFF475569)
                         )
                     } else {
                         // Show code
@@ -185,7 +180,7 @@ fun FriendMatchScreen(
                             modifier = Modifier.fillMaxWidth()
                                 .clip(RoundedCornerShape(28.dp))
                                 .background(Color.White)
-                                .border(4.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
+                                .border(4.dp, Color(0xFF475569), RoundedCornerShape(28.dp))
                                 .padding(28.dp)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -198,7 +193,7 @@ fun FriendMatchScreen(
                                     modifier = Modifier.fillMaxWidth()
                                         .clip(RoundedCornerShape(18.dp))
                                         .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))))
-                                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(18.dp))
+                                        .border(3.dp, Color(0xFF475569), RoundedCornerShape(18.dp))
                                         .padding(vertical = 16.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -223,24 +218,24 @@ fun FriendMatchScreen(
                         modifier = Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(28.dp))
                             .background(Color.White)
-                            .border(4.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
+                            .border(4.dp, Color(0xFF475569), RoundedCornerShape(28.dp))
                             .padding(24.dp)
                     ) {
                         Column {
-                            Text("🔑  Enter Room Code", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
+                            Text("🔑  Enter Room Code", fontFamily = FredokaOne, color = Color(0xFF475569), fontSize = 20.sp)
                             Spacer(modifier = Modifier.height(16.dp))
                             Box(
                                 modifier = Modifier.fillMaxWidth()
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Color(0xFFF3F4F6))
-                                    .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(16.dp))
+                                    .border(2.dp, Color(0xFF475569), RoundedCornerShape(16.dp))
                                     .padding(horizontal = 16.dp, vertical = 4.dp)
                             ) {
                                 TextField(
                                     value = roomCode, onValueChange = { roomCode = it.uppercase() },
                                     singleLine = true,
                                     placeholder = { Text("ROOM CODE", fontFamily = FredokaOne, color = Color(0xFF9CA3AF), fontSize = 22.sp, letterSpacing = 4.sp) },
-                                    textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FredokaOne, fontSize = 22.sp, color = Color(0xFF1E1B4B), letterSpacing = 4.sp),
+                                    textStyle = androidx.compose.ui.text.TextStyle(fontFamily = FredokaOne, fontSize = 22.sp, color = Color(0xFF475569), letterSpacing = 4.sp),
                                     colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                                         focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                                     modifier = Modifier.fillMaxWidth()

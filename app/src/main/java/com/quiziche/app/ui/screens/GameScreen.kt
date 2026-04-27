@@ -1,5 +1,6 @@
 package com.quiziche.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -69,6 +70,7 @@ fun GameScreen(
     var player2Answered by remember { mutableStateOf(false) }
     var showSyncResult by remember { mutableStateOf(false) }
     var timeLeft by remember { mutableStateOf(15) }
+    var showExitDialog by remember { mutableStateOf(false) }
     var selectedAnswer by remember { mutableStateOf<Int?>(null) }
 
     fun finalizeGame() {
@@ -119,9 +121,24 @@ fun GameScreen(
         }
     }
 
-    // Observe Multiplayer Session
+    fun handleSurrender() {
+        scope.launch {
+            authRepository.currentUserUID?.let { uid ->
+                // Penalty for the one who leaves
+                userRepository.updateStats(uid, won = false, category = category, xpEarned = 0, coinsEarned = 0, isSingleplayer = isSingleplayer)
+                if (!isSingleplayer && roomId != null) {
+                    gameRepository.completeGame(roomId)
+                }
+                onNavigateToResults(userScore, userNickname, 0, opponentName, questions.size, category, false)
+            }
+        }
+    }
+
+    BackHandler {
+        showExitDialog = true
+    }
+
     LaunchedEffect(roomId) {
-        // Fetch own nickname
         authRepository.currentUserUID?.let { uid ->
             val result = userRepository.getUserProfile(uid)
             if (result.isSuccess) {
@@ -138,7 +155,6 @@ fun GameScreen(
                     
                     opponentScore = if (isPlayer1) session.player2Score else session.player1Score
                     
-                    // Fetch opponent's name if we don't have it
                     if (opponentUid.isNotEmpty() && (opponentName == "Opponent" || opponentName == "Solo Bot")) {
                         val result = userRepository.getUserProfile(opponentUid)
                         if (result.isSuccess) {
@@ -151,7 +167,6 @@ fun GameScreen(
                     player1Answered = session.player1Answered
                     player2Answered = session.player2Answered
                     
-                    // Start game when both are ready
                     if (!isGameStarted && player1Ready && player2Ready) {
                         isGameStarted = true
                         if (isPlayer1 && session.currentQuestionStartTime == 0L) {
@@ -159,7 +174,6 @@ fun GameScreen(
                         }
                     }
 
-                    // Sync question index
                     if (currentQuestionIndex != session.currentQuestionIndex) {
                         currentQuestionIndex = session.currentQuestionIndex
                         selectedAnswer = null
@@ -167,7 +181,6 @@ fun GameScreen(
                         timeLeft = 15
                     }
 
-                    // Automatic progression if both answered
                     if (isPlayer1 && isGameStarted && session.player1Answered && session.player2Answered && !showSyncResult) {
                         scope.launch {
                             showSyncResult = true
@@ -178,14 +191,18 @@ fun GameScreen(
                         showSyncResult = true
                     }
 
-                    // Initial load of questions
+                    if (session.status == "COMPLETED" && !isLoading) {
+                        // Game was ended by surrender or error
+                        onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, userScore >= opponentScore)
+                        return@collectLatest
+                    }
+
                     if (questions.isEmpty() && session.questionIds.isNotEmpty()) {
                         val result = quizRepository.getQuestionsByCategory(category, 5)
                         if (result.isSuccess) {
                             questions = result.getOrDefault(emptyList())
                         }
                         isLoading = false
-                        // Set self as ready
                         gameRepository.setReady(roomId, isPlayer1, true)
                     }
                 }
@@ -216,20 +233,17 @@ fun GameScreen(
                     delay(1500)
                     triggerNextQuestion()
                 } else if (roomId != null) {
-                    // Mark as answered with 0 points
                     gameRepository.submitAnswer(roomId, isPlayer1, userScore)
                 }
             }
         }
     }
 
-    // Handle selection
     fun onAnswerSelected(index: Int) {
         if (selectedAnswer == null) {
             selectedAnswer = index
             val isCorrect = index == currentQuestion?.correctAnswerIndex
             if (isCorrect) {
-                // Speed-based scoring: 10 base + up to 10 bonus
                 val points = 10 + (timeLeft * 1) 
                 userScore += points
             }
@@ -248,10 +262,24 @@ fun GameScreen(
         }
     }
 
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("🏳️ Surrender?", fontFamily = FredokaOne, color = Color.White) },
+            text = { Text("If you exit now, you will lose the match and your ELO will drop! Are you sure?", fontFamily = Fredoka, color = Color.White.copy(0.8f)) },
+            confirmButton = {
+                TextButton(onClick = { handleSurrender() }) { Text("Yes, Exit", color = Color(0xFFEF4444), fontFamily = FredokaOne) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) { Text("Stay", color = Color.White, fontFamily = FredokaOne) }
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = Color(0xFF1E293B)
+        )
+    }
+
     if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E), Color(0xFF2D1B69)))),
-            contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E), Color(0xFF2D1B69)))), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("🧪", fontSize = 72.sp)
                 Spacer(modifier = Modifier.height(16.dp))
@@ -264,230 +292,99 @@ fun GameScreen(
     }
 
     if (questions.isEmpty() || currentQuestion == null) {
-        Box(modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E)))),
-            contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E)))), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("😢", fontSize = 60.sp)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("No questions found!", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(20.dp))
-                CartoonButton(
-                    text = "🏠  Return",
-                    onClick = { onNavigateToResults(0, userNickname, 0, "Opponent", 0, category, false) },
-                    bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
-                    textColor = Color(0xFF1E1B4B)
-                )
+                CartoonButton(text = "🏠  Return", onClick = { onNavigateToResults(0, userNickname, 0, "Opponent", 0, category, false) }, bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))), textColor = Color(0xFF475569))
             }
         }
         return
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0D0020), Color(0xFF1A0A2E), Color(0xFF2D1B69))
-                )
-            )
+        modifier = Modifier.fillMaxSize().background(brush = Brush.verticalGradient(colors = listOf(Color(0xFF0D0020), Color(0xFF1A0A2E), Color(0xFF2D1B69))))
     ) {
-        // Background star decorations
+        // Star decorations
         Text("⭐", fontSize = 16.sp, modifier = Modifier.offset(20.dp, 50.dp), color = Color.White.copy(0.2f))
         Text("✨", fontSize = 12.sp, modifier = Modifier.offset(310.dp, 80.dp), color = Color.White.copy(0.15f))
         Text("🌟", fontSize = 14.sp, modifier = Modifier.offset(280.dp, 160.dp), color = Color.White.copy(0.15f))
         Text("⭐", fontSize = 10.sp, modifier = Modifier.offset(50.dp, 200.dp), color = Color.White.copy(0.2f))
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 32.dp)
-        ) {
-            // Top Bar - Timer & Scores
-            Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                // Timer Progress Bar
-                val progress = timeLeft / 15f
-                val progressColor by animateColorAsState(
-                    if (timeLeft <= 5) Color.Red else Color(0xFF4ADE80),
-                    label = "color"
+
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 24.dp, bottom = 32.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), contentAlignment = Alignment.Center) {
+                // Logo in center
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = com.quiziche.app.R.drawable.quiziche_minimal),
+                    contentDescription = "Logo",
+                    modifier = Modifier.height(30.dp).align(Alignment.Center)
                 )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(12.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(progress)
-                            .fillMaxHeight()
-                            .clip(CircleShape)
-                            .background(progressColor)
-                    )
+                
+                // Close button on the right
+                Box(modifier = Modifier.size(36.dp).align(Alignment.CenterEnd).clip(CircleShape).background(Color.Red.copy(0.2f)).border(1.5.dp, Color.Red.copy(0.4f), CircleShape).clickable { showExitDialog = true }, contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Close, null, tint = Color.Red, modifier = Modifier.size(20.dp))
                 }
-
+            }
+            
+            Column(modifier = Modifier.padding(bottom = 24.dp)) {
+                val progress = timeLeft / 15f
+                val progressColor by animateColorAsState(if (timeLeft <= 5) Color.Red else Color(0xFF4ADE80), label = "color")
+                Box(modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f))) {
+                    Box(modifier = Modifier.fillMaxWidth(progress).fillMaxHeight().clip(CircleShape).background(progressColor))
+                }
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // Score Display
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    ScoreCard(
-                        name = userNickname,
-                        score = userScore.toString(),
-                        status = if (selectedAnswer != null) "Answered" else "Thinking...",
-                        icon = "🎮",
-                        borderColor = if (selectedAnswer != null) Color(0xFF4ADE80) else Color(0xFFEAB308),
-                        modifier = Modifier.weight(1f)
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ScoreCard(name = userNickname, score = userScore.toString(), status = if (selectedAnswer != null) "Answered" else "Thinking...", icon = "🎮", borderColor = if (selectedAnswer != null) Color(0xFF4ADE80) else Color(0xFFEAB308), modifier = Modifier.weight(1f))
                     if (!isSingleplayer) {
                         val oppAnswered = if (isPlayer1) player2Answered else player1Answered
-                        ScoreCard(
-                            name = opponentName,
-                            score = opponentScore.toString(),
-                            status = if (oppAnswered) "Answered" else "Thinking...",
-                            icon = "🎯",
-                            borderColor = if (oppAnswered) Color(0xFF4ADE80) else Color.White.copy(alpha = 0.2f),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-                
-                if (!isSingleplayer && !isGameStarted) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFFBBF24).copy(0.15f))
-                        .border(2.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(16.dp))
-                        .padding(12.dp)) {
-                        Text("🛸 Waiting for players to be ready...", fontFamily = Fredoka,
-                            color = Color(0xFFFBBF24), textAlign = TextAlign.Center, fontSize = 14.sp,
-                            modifier = Modifier.fillMaxWidth())
+                        ScoreCard(name = opponentName, score = opponentScore.toString(), status = if (oppAnswered) "Answered" else "Thinking...", icon = "🎯", borderColor = if (oppAnswered) Color(0xFF4ADE80) else Color.White.copy(alpha = 0.2f), modifier = Modifier.weight(1f))
                     }
                 }
             }
 
-            // Question Info
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(0.15f))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)) {
-                    Text("Q ${currentQuestionIndex + 1}/${questions.size}", fontFamily = FredokaOne,
-                        color = Color.White, fontSize = 14.sp)
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color.White.copy(0.15f)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    Text("Q ${currentQuestionIndex + 1}/${questions.size}", fontFamily = FredokaOne, color = Color.White, fontSize = 14.sp)
                 }
-                Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF7C3AED).copy(0.5f))
-                    .border(2.dp, Color(0xFFFBBF24).copy(0.5f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)) {
-                    Text("🔬 ${category.replaceFirstChar { it.uppercase() }}", fontFamily = Fredoka,
-                        color = Color(0xFFFBBF24), fontSize = 12.sp)
+                Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFF7C3AED).copy(0.5f)).border(2.dp, Color(0xFFFBBF24).copy(0.5f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+                    Text("🔬 ${category.replaceFirstChar { it.uppercase() }}", fontFamily = Fredoka, color = Color(0xFFFBBF24), fontSize = 12.sp)
                 }
             }
 
-            // Question Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(Color.White.copy(0.08f))
-                    .border(3.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp))
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = currentQuestion.text,
-                    fontFamily = Fredoka,
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 30.sp
-                )
+            Box(modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(0.08f)).border(3.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp)).padding(24.dp), contentAlignment = Alignment.Center) {
+                Text(text = currentQuestion.text, fontFamily = Fredoka, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 30.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Answer Options
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 currentQuestion.options.forEachIndexed { index, option ->
-                    AnswerOption(
-                        index = index,
-                        text = option,
-                        isSelected = selectedAnswer == index,
-                        isCorrect = index == currentQuestion.correctAnswerIndex,
-                        showResult = showSyncResult,
-                        onClick = { onAnswerSelected(index) }
-                    )
+                    AnswerOption(index = index, text = option, isSelected = selectedAnswer == index, isCorrect = index == currentQuestion.correctAnswerIndex, showResult = showSyncResult, onClick = { onAnswerSelected(index) })
                 }
             }
         }
 
-        // Timer Circle (bottom right)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 32.dp, end = 24.dp)
-                .size(64.dp),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 32.dp, end = 24.dp).size(64.dp), contentAlignment = Alignment.Center) {
             val sweepAngle = 360f * (timeLeft / 15f)
             val circleColor = if (timeLeft <= 5) Color.Red else Color.White
-
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.2f),
-                    style = Stroke(width = 4.dp.toPx())
-                )
-                drawArc(
-                    color = circleColor,
-                    startAngle = -90f,
-                    sweepAngle = sweepAngle,
-                    useCenter = false,
-                    style = Stroke(width = 4.dp.toPx())
-                )
+                drawCircle(color = Color.White.copy(alpha = 0.2f), style = Stroke(width = 4.dp.toPx()))
+                drawArc(color = circleColor, startAngle = -90f, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 4.dp.toPx()))
             }
-            Text(
-                text = timeLeft.toString(),
-                color = circleColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text(text = timeLeft.toString(), color = circleColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
-
-    // Removed redundant LaunchedEffect
 }
 
 @Composable
-fun ScoreCard(
-    name: String,
-    score: String,
-    status: String,
-    icon: String,
-    borderColor: Color,
-    modifier: Modifier = Modifier
-) {
+fun ScoreCard(name: String, score: String, status: String, icon: String, borderColor: Color, modifier: Modifier = Modifier) {
     Box(modifier = modifier) {
-        Box(modifier = Modifier.fillMaxWidth().offset(3.dp, 4.dp).height(84.dp)
-            .clip(RoundedCornerShape(22.dp)).background(Color(0xFF1E1B4B).copy(0.6f)))
-        Box(modifier = Modifier.fillMaxWidth().height(84.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color.White.copy(0.1f))
-            .border(3.dp, borderColor, RoundedCornerShape(22.dp))
-            .padding(10.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().offset(3.dp, 4.dp).height(84.dp).clip(RoundedCornerShape(22.dp)).background(Color(0xFF475569).copy(0.6f)))
+        Box(modifier = Modifier.fillMaxWidth().height(84.dp).clip(RoundedCornerShape(22.dp)).background(Color.White.copy(0.1f)).border(3.dp, borderColor, RoundedCornerShape(22.dp)).padding(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(36.dp).clip(CircleShape)
-                    .background(borderColor.copy(0.25f)).border(2.dp, borderColor, CircleShape),
-                    contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(borderColor.copy(0.25f)).border(2.dp, borderColor, CircleShape), contentAlignment = Alignment.Center) {
                     Text(icon, fontSize = 18.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -502,14 +399,7 @@ fun ScoreCard(
 }
 
 @Composable
-fun AnswerOption(
-    index: Int,
-    text: String,
-    isSelected: Boolean,
-    isCorrect: Boolean,
-    showResult: Boolean,
-    onClick: () -> Unit
-) {
+fun AnswerOption(index: Int, text: String, isSelected: Boolean, isCorrect: Boolean, showResult: Boolean, onClick: () -> Unit) {
     val bgBrush = when {
         showResult && isCorrect -> Brush.horizontalGradient(listOf(Color(0xFF22C55E), Color(0xFF10B981)))
         showResult && isSelected && !isCorrect -> Brush.horizontalGradient(listOf(Color(0xFFEF4444), Color(0xFFF97316)))
@@ -531,30 +421,15 @@ fun AnswerOption(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .then(
-                if (isSelected || (showResult && (isCorrect || isSelected))) {
-                    Modifier.shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
-                } else Modifier
-            )
-            .clip(RoundedCornerShape(22.dp))
-            .background(bgBrush)
-            .border(3.dp, borderColor, RoundedCornerShape(22.dp))
-            .clickable(enabled = !showResult) { onClick() }
-            .padding(horizontal = 12.dp),
+        modifier = Modifier.fillMaxWidth().height(64.dp).then(if (isSelected || (showResult && (isCorrect || isSelected))) Modifier.shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF475569).copy(0.4f)) else Modifier).clip(RoundedCornerShape(22.dp)).background(bgBrush).border(3.dp, borderColor, RoundedCornerShape(22.dp)).clickable(enabled = !showResult) { onClick() }.padding(horizontal = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(labelBg)
-                .border(2.dp, Color.White.copy(0.3f), RoundedCornerShape(14.dp)),
-                contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(labelBg).border(2.dp, Color.White.copy(0.3f), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                 Text(label, fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
             }
             Spacer(modifier = Modifier.width(14.dp))
-            Text(text, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f),
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Text(text, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
             if (showResult) {
                 Text(if (isCorrect) "✅" else if (isSelected) "❌" else "", fontSize = 22.sp)
             }

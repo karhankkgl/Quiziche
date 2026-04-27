@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.Fredoka
@@ -30,8 +32,8 @@ fun CartoonButton(
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
     bgBrush: Brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
-    textColor: Color = Color(0xFF1E1B4B),
-    borderColor: Color = Color(0xFF1E1B4B),
+    textColor: Color = Color.White,
+    borderColor: Color = Color.White.copy(0.2f),
     elevation: androidx.compose.ui.unit.Dp = 8.dp
 ) {
     Box(
@@ -41,7 +43,7 @@ fun CartoonButton(
             .shadow(elevation = if (isLoading) 0.dp else elevation, shape = RoundedCornerShape(20.dp), spotColor = borderColor.copy(0.4f))
             .clip(RoundedCornerShape(20.dp))
             .background(bgBrush)
-            .border(3.dp, borderColor, RoundedCornerShape(20.dp))
+            .border(1.5.dp, borderColor, RoundedCornerShape(22.dp))
             .clickable(enabled = !isLoading) { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -68,7 +70,7 @@ fun CartoonTextField(
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(Color.White.copy(alpha = 0.12f))
-            .border(2.dp, Color.White.copy(0.2f), RoundedCornerShape(18.dp))
+            .border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(18.dp))
             .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -100,20 +102,17 @@ fun BasicCartoonInput(
         modifier = modifier,
         singleLine = true,
         placeholder = {
-            Text(placeholder, color = Color.White.copy(0.45f), fontFamily = Fredoka, fontSize = 16.sp)
+            Text(placeholder, fontFamily = Fredoka, color = Color.White.copy(0.4f), fontSize = 14.sp)
         },
-        textStyle = androidx.compose.ui.text.TextStyle(
-            fontFamily = Fredoka,
-            fontSize = 16.sp,
-            color = Color.White
-        ),
+        textStyle = androidx.compose.ui.text.TextStyle(fontFamily = Fredoka, fontSize = 16.sp, color = Color.White),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
+            unfocusedIndicatorColor = Color.Transparent,
+            cursorColor = Color.White
         )
     )
 }
@@ -121,18 +120,92 @@ fun BasicCartoonInput(
 @Composable
 fun CartoonCard(
     modifier: Modifier = Modifier,
-    bgBrush: Brush = Brush.linearGradient(listOf(Color.White, Color(0xFFF9FAFB))),
-    borderColor: Color = Color(0xFF1E1B4B),
+    bgBrush: Brush = Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A))),
+    borderColor: Color = Color.White.copy(0.1f),
     elevation: androidx.compose.ui.unit.Dp = 8.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
-            .shadow(elevation = elevation, shape = RoundedCornerShape(24.dp), spotColor = borderColor.copy(0.3f))
+            .shadow(elevation = elevation, shape = RoundedCornerShape(24.dp), spotColor = Color.Black.copy(0.4f))
             .clip(RoundedCornerShape(24.dp))
             .background(bgBrush)
-            .border(3.dp, borderColor, RoundedCornerShape(24.dp))
+            .border(1.5.dp, borderColor, RoundedCornerShape(24.dp))
     ) {
         content()
     }
+}
+@Composable
+fun ModernBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(14.dp), spotColor = Color.Black.copy(0.6f))
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
+            .border(2.dp, Color.White, RoundedCornerShape(14.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text("◀", fontSize = 20.sp, color = Color.White, modifier = Modifier.offset(x = (-1).dp))
+    }
+}
+
+@Composable
+fun CartoonNavItem(
+    emoji: String,
+    label: String,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+    badge: Int = 0
+) {
+    Box(modifier = Modifier.clickable { onClick() }.padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isSelected) Color(0xFF7C3AED) else Color.White.copy(0.05f))
+                        .then(if (isSelected) Modifier.border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(14.dp)) else Modifier),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(emoji, fontSize = 22.sp)
+                }
+                if (badge > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(4.dp, (-4).dp)
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEF4444))
+                            .border(1.dp, Color.White.copy(0.3f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) { Text(badge.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(label, fontFamily = Fredoka, fontSize = 11.sp,
+                color = if (isSelected) Color(0xFFC4B5FD) else Color.White.copy(0.5f), fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+fun BottomNavItem(
+    icon: ImageVector,
+    label: String,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+    badgeCount: Int = 0
+) {
+    // Keep for legacy usage
+    CartoonNavItem(emoji = when (label) {
+        "Home" -> "🏠"
+        "Categories" -> "🗂️"
+        "Rankings" -> "🏆"
+        "Friends" -> "🦁"
+        else -> "⭐"
+    }, label = label, isSelected = isSelected, onClick = onClick, badge = badgeCount)
 }

@@ -35,13 +35,13 @@ import com.quiziche.app.data.repository.UserRepository
 import com.quiziche.app.data.model.User
 import kotlinx.coroutines.launch
 
-data class OngoingGame(
+data class GlobalMission(
     val id: Int,
-    val opponentIcon: String,
-    val opponentName: String,
-    val status: String,
-    val category: String,
-    val score: String
+    val icon: String,
+    val title: String,
+    val reward: String,
+    val progress: Float,
+    val color: Color
 )
 
 @Composable
@@ -68,30 +68,22 @@ fun MainMenuScreen(
         }
     }
 
-    val ongoingGames = listOf(
-        OngoingGame(1, "🎯", "Alex", "Your Turn", "Science", "3-2"),
-        OngoingGame(2, "🎮", "Maria", "Waiting", "History", "1-1"),
-        OngoingGame(3, "🎪", "John", "Your Turn", "Sports", "2-0")
+    val globalMissions = listOf(
+        GlobalMission(1, "🔬", "Science Master", "500 🪙", 0.7f, Color(0xFF7C3AED)),
+        GlobalMission(2, "🌍", "World Explorer", "300 🪙", 0.4f, Color(0xFF10B981)),
+        GlobalMission(3, "🏛️", "History Buff", "1000 🪙", 0.1f, Color(0xFFF97316))
     )
 
     val infiniteTransition = rememberInfiniteTransition(label = "menu_anim")
-    val rocket1Y by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = -12f,
-        animationSpec = infiniteRepeatable(tween(1800), RepeatMode.Reverse), label = "r1"
-    )
-    val starRotate by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing)), label = "sr"
-    )
-    val zebraScale by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "z"
-    )
+    // Animations disabled as requested
+    val rocket1Y = 0f
+    val starRotate = 15f
+    val zebraScale = 1f
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         // Top decorative blob
         Box(
@@ -113,56 +105,69 @@ fun MainMenuScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp), spotColor = Color.Black.copy(0.8f))
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4C1D95))))
-                    .border(0.dp, Color.Transparent, RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-                    .padding(horizontal = 24.dp, vertical = 28.dp)
+                    .background(Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A))))
+                    .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
-                Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // LEFT: Avatar + Name
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.weight(1f).clickable { onNavigateToProfile() },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // User info
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { onNavigateToProfile() }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(54.dp)
-                                    .clip(CircleShape)
-                                    .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899))))
-                                    .border(3.dp, Color.White, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = userProfile?.avatarIcon ?: "🎮", fontSize = 28.sp)
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(text = "Hey, ${userProfile?.name?.split(" ")?.firstOrNull() ?: "Explorer"}! 👋",
-                                    fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
-                                Text(text = "Level ${userProfile?.level ?: 1} • Quiz Master",
-                                    fontFamily = Fredoka, color = Color.White.copy(0.75f), fontSize = 13.sp)
-                            }
-                        }
-                        // ELO badge
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0xFFFBBF24))
-                                .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(16.dp))
-                                .clickable { onNavigateToLeaderboard() }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899))))
+                                .border(1.5.dp, Color.White, CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("⚡", fontSize = 16.sp)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("${userProfile?.elo ?: 1000}", fontFamily = FredokaOne, fontSize = 16.sp, color = Color(0xFF1E1B4B))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("🪙 ${userProfile?.coins ?: 0}", fontFamily = FredokaOne, fontSize = 14.sp, color = Color(0xFF1E1B4B))
-                            }
+                            Text(text = userProfile?.avatarIcon ?: "🎮", fontSize = 16.sp)
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = userProfile?.name?.split(" ")?.firstOrNull() ?: "Explorer",
+                            fontFamily = FredokaOne,
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            maxLines = 1
+                        )
+                    }
+
+                    // CENTER: Logo
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = com.quiziche.app.R.drawable.quiziche_minimal),
+                        contentDescription = "Logo",
+                        modifier = Modifier.height(30.dp).weight(0.8f),
+                        alignment = Alignment.Center
+                    )
+
+                    // RIGHT: ELO & Coins (50% transparent)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color.White.copy(0.12f))
+                                .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(14.dp))
+                                .clickable { onNavigateToLeaderboard() }
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Text("⚡", fontSize = 13.sp)
+                            Text("${userProfile?.elo ?: 1000}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color.White, maxLines = 1)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("🪙", fontSize = 13.sp)
+                            Text("${userProfile?.coins ?: 0}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color.White, maxLines = 1)
                         }
                     }
                 }
@@ -176,10 +181,10 @@ fun MainMenuScreen(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth()
                     .height(140.dp)
-                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(28.dp), spotColor = Color(0xFF7C3AED).copy(0.5f))
+                    .shadow(elevation = 20.dp, shape = RoundedCornerShape(28.dp), spotColor = Color.Black.copy(0.8f))
                     .clip(RoundedCornerShape(28.dp))
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))))
-                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF8B5CF6), Color(0xFFD946EF))))
+                    .border(2.dp, Color.White.copy(0.15f), RoundedCornerShape(28.dp))
                     .clickable { onNavigateToGameSettings() }
             ) {
                 Row(modifier = Modifier.fillMaxSize().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -190,9 +195,10 @@ fun MainMenuScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Box(
                             modifier = Modifier
+                                .shadow(elevation = 6.dp, shape = RoundedCornerShape(12.dp), spotColor = Color(0xFF475569).copy(0.4f))
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color.White)
-                                .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(12.dp))
+                                .border(2.dp, Color(0xFF475569), RoundedCornerShape(12.dp))
                                 .padding(horizontal = 16.dp, vertical = 6.dp)
                         ) {
                             Text("Play Now! →", fontFamily = FredokaOne, color = Color(0xFF7C3AED), fontSize = 14.sp)
@@ -202,7 +208,6 @@ fun MainMenuScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("🎮", fontSize = 52.sp)
                         Text("VS", fontFamily = FredokaOne, fontSize = 18.sp, color = Color(0xFFFBBF24))
-                        Text("🎯", fontSize = 40.sp)
                     }
                 }
             }
@@ -217,7 +222,7 @@ fun MainMenuScreen(
                 // Singleplayer - Zebra themed
                 CartoonMenuCard(
                     modifier = Modifier.weight(1f),
-                    bgBrush = Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF7C3AED))),
+                    bgBrush = Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF2563EB))),
                     onClick = onNavigateToCategories
                 ) {
                     Text("🦓", fontSize = 40.sp, modifier = Modifier.scale(zebraScale))
@@ -228,7 +233,7 @@ fun MainMenuScreen(
                 // Friends - Lion themed
                 CartoonMenuCard(
                     modifier = Modifier.weight(1f),
-                    bgBrush = Brush.linearGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24))),
+                    bgBrush = Brush.linearGradient(listOf(Color(0xFFF97316), Color(0xFFEA580C))),
                     onClick = onNavigateToFriends
                 ) {
                     Text("🦁", fontSize = 40.sp)
@@ -247,7 +252,7 @@ fun MainMenuScreen(
                 // Categories - Dolphin themed
                 CartoonMenuCard(
                     modifier = Modifier.weight(1f),
-                    bgBrush = Brush.linearGradient(listOf(Color(0xFF14B8A6), Color(0xFF0EA5E9))),
+                    bgBrush = Brush.linearGradient(listOf(Color(0xFF14B8A6), Color(0xFF0D9488))),
                     onClick = onNavigateToCategories
                 ) {
                     Text("🐬", fontSize = 40.sp, modifier = Modifier.offset(y = rocket1Y.dp))
@@ -258,32 +263,33 @@ fun MainMenuScreen(
                 // Leaderboard - Trophy themed
                 CartoonMenuCard(
                     modifier = Modifier.weight(1f),
-                    bgBrush = Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
+                    bgBrush = Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706))),
                     onClick = onNavigateToLeaderboard
                 ) {
                     Text("🏆", fontSize = 40.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Rankings", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 16.sp)
-                    Text("Top 100", fontFamily = Fredoka, color = Color(0xFF1E1B4B).copy(0.75f), fontSize = 12.sp)
+                    Text("Rankings", fontFamily = FredokaOne, color = Color(0xFF78350F), fontSize = 16.sp)
+                    Text("Top 100", fontFamily = Fredoka, color = Color(0xFF78350F).copy(0.75f), fontSize = 12.sp)
                 }
             }
 
-            // ===== ONGOING GAMES =====
+            // ===== GLOBAL MISSIONS =====
             Spacer(modifier = Modifier.height(28.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("⚡ Active Battles", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
+                Text("🌍 Global Missions", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                    modifier = Modifier
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(12.dp), spotColor = Color.Black.copy(0.4f))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFF7C3AED))
-                        .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(12.dp))
-                        .clickable { onNavigateToOngoingGames() }
+                        .border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text("See All →", fontFamily = Fredoka, color = Color.White, fontSize = 13.sp)
+                    Text("Daily", fontFamily = Fredoka, color = Color.White, fontSize = 13.sp)
                 }
             }
 
@@ -292,11 +298,11 @@ fun MainMenuScreen(
             Row(
                 modifier = Modifier
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                ongoingGames.forEach { game ->
-                    CartoonOngoingCard(game = game, onNavigateToGame = onNavigateToGame)
+                globalMissions.forEach { mission ->
+                    CartoonMissionCard(mission = mission)
                 }
             }
 
@@ -336,7 +342,7 @@ fun MainMenuScreen(
                             },
                             isLoading = isAccepting,
                             bgBrush = Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFFFBBF24))),
-                            textColor = Color(0xFF1E1B4B)
+                            textColor = Color(0xFF475569)
                         )
                     },
                     dismissButton = {
@@ -354,14 +360,14 @@ fun MainMenuScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(Color.White)
-                .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .background(Color(0xFF1E293B))
+                .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                 CartoonNavItem(emoji = "🏠", label = "Home", isSelected = true, onClick = {})
                 CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories)
-                CartoonNavItem(emoji = "⚡", label = "Battles", onClick = onNavigateToOngoingGames, badge = 2)
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
                 CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends)
             }
         }
@@ -384,10 +390,10 @@ fun CartoonMenuCard(
         modifier = modifier
             .fillMaxWidth()
             .height(120.dp)
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
+            .shadow(elevation = 18.dp, shape = RoundedCornerShape(22.dp), spotColor = Color.Black.copy(0.7f))
             .clip(RoundedCornerShape(22.dp))
             .background(bgBrush)
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(22.dp))
+            .border(2.dp, Color.White.copy(0.15f), RoundedCornerShape(22.dp))
             .clickable { onClick() }
             .padding(16.dp)
     ) {
@@ -396,116 +402,52 @@ fun CartoonMenuCard(
 }
 
 @Composable
-fun CartoonOngoingCard(game: OngoingGame, onNavigateToGame: (String) -> Unit) {
-    val isYourTurn = game.status == "Your Turn"
-    val bgBrush = if (isYourTurn)
-        Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9)))
-    else
-        Brush.linearGradient(listOf(Color.White, Color(0xFFF3F4F6)))
-
+fun CartoonMissionCard(mission: GlobalMission) {
     Box(
         modifier = Modifier
-            .width(240.dp)
-            .height(130.dp)
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+            .width(220.dp)
+            .height(140.dp)
+            .shadow(elevation = 12.dp, shape = RoundedCornerShape(22.dp), spotColor = Color.Black.copy(0.6f))
             .clip(RoundedCornerShape(22.dp))
-            .background(bgBrush)
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(22.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A))))
+            .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(22.dp))
+            .padding(16.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    modifier = Modifier.size(44.dp).clip(CircleShape)
-                        .background(if (isYourTurn) Color.White.copy(0.25f) else Color(0xFFEDE9FE))
-                        .border(2.dp, Color(0xFF1E1B4B), CircleShape),
+                    modifier = Modifier.size(42.dp).clip(CircleShape)
+                        .background(mission.color.copy(0.2f))
+                        .border(1.dp, mission.color.copy(0.4f), CircleShape),
                     contentAlignment = Alignment.Center
-                ) { Text(game.opponentIcon, fontSize = 22.sp) }
+                ) { Text(mission.icon, fontSize = 22.sp) }
                 Spacer(modifier = Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("vs ${game.opponentName}", fontFamily = FredokaOne,
-                        color = if (isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 15.sp)
-                    Text(game.category, fontFamily = Fredoka,
-                        color = if (isYourTurn) Color.White.copy(0.75f) else Color(0xFF6B7280), fontSize = 12.sp)
+                Column {
+                    Text(mission.title, fontFamily = FredokaOne, color = Color.White, fontSize = 15.sp)
+                    Text("Reward: ${mission.reward}", fontFamily = Fredoka, color = Color(0xFFFBBF24), fontSize = 12.sp)
                 }
-                Text(game.score, fontFamily = FredokaOne,
-                    color = if (isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 18.sp)
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+            // Progress Bar
             Box(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isYourTurn) Color.White else Color(0xFFEDE9FE))
-                    .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(12.dp))
-                    .clickable { if (isYourTurn) onNavigateToGame(game.id.toString()) }
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(0.1f))
             ) {
-                Text(
-                    if (isYourTurn) "⚡ Play Now!" else "⏳ Waiting...",
-                    fontFamily = FredokaOne,
-                    color = if (isYourTurn) Color(0xFF10B981) else Color(0xFF6B7280),
-                    fontSize = 13.sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun CartoonNavItem(
-    emoji: String,
-    label: String,
-    isSelected: Boolean = false,
-    onClick: () -> Unit = {},
-    badge: Int = 0
-) {
-    Box(modifier = Modifier.clickable { onClick() }.padding(horizontal = 8.dp, vertical = 4.dp)) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) Color(0xFF7C3AED) else Color(0xFFF3F4F6))
-                        .then(if (isSelected) Modifier.border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(14.dp)) else Modifier),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(emoji, fontSize = 22.sp)
-                }
-                if (badge > 0) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(4.dp, (-4).dp)
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEF4444))
-                            .border(2.dp, Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) { Text(badge.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
-                }
+                        .fillMaxWidth(mission.progress)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(Brush.horizontalGradient(listOf(mission.color, mission.color.copy(0.7f))))
+                )
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontFamily = Fredoka, fontSize = 11.sp,
-                color = if (isSelected) Color(0xFF7C3AED) else Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("${(mission.progress * 100).toInt()}% Complete", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 11.sp)
         }
     }
 }
 
-@Composable
-fun BottomNavItem(
-    icon: ImageVector,
-    label: String,
-    isSelected: Boolean = false,
-    onClick: () -> Unit = {},
-    badgeCount: Int = 0
-) {
-    // Keep for legacy usage
-    CartoonNavItem(emoji = when (label) {
-        "Home" -> "🏠"
-        "Categories" -> "🗂️"
-        "Games" -> "⚡"
-        "Friends" -> "🦁"
-        else -> "⭐"
-    }, label = label, isSelected = isSelected, onClick = onClick, badge = badgeCount)
-}
+

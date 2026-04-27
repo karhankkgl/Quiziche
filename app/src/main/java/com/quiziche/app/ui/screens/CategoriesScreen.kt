@@ -22,11 +22,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 
 @Composable
 fun CategoriesScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToCategoryDetails: (String) -> Unit
+    onNavigateToCategoryDetails: (String) -> Unit,
+    onNavigateToMainMenu: () -> Unit,
+    onNavigateToFriends: () -> Unit,
+    onNavigateToLeaderboard: () -> Unit
 ) {
     val categories = listOf(
         Triple("🚀", "Space & Science", "science"),
@@ -65,7 +69,7 @@ fun CategoriesScreen(
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFEDE9FE), Color(0xFFFEF3C7))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -78,17 +82,10 @@ fun CategoriesScreen(
                     modifier = Modifier.fillMaxWidth().padding(top = 36.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                        .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
-                        .clickable { onNavigateBack() },
-                        contentAlignment = Alignment.Center) {
-                        Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Text("🗂️  Categories", fontFamily = FredokaOne, fontSize = 28.sp, color = Color(0xFF1E1B4B))
+                    Text("🗂️  Categories", fontFamily = FredokaOne, fontSize = 28.sp, color = Color.White)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Pick your battlefield! ⚔️", fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFF6B7280))
+                Text("Pick your battlefield! ⚔️", fontFamily = Fredoka, fontSize = 16.sp, color = Color.White.copy(0.6f))
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -104,10 +101,10 @@ fun CategoriesScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(110.dp)
-                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
+                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color.Black.copy(0.7f))
                                 .clip(RoundedCornerShape(24.dp))
                                 .background(brush)
-                                .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                                .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp))
                                 .clickable { onNavigateToCategoryDetails(id) }
                                 .padding(16.dp)
                         ) {
@@ -128,5 +125,23 @@ fun CategoriesScreen(
         // Decorations (on top)
         Text("🚀", fontSize = 48.sp, modifier = Modifier.offset(300.dp, 60.dp).offset(y = rocketY.dp).rotate(-25f))
         Text("⭐", fontSize = 22.sp, modifier = Modifier.offset(20.dp, 80.dp), color = Color(0xFFFBBF24))
+
+        // ===== BOTTOM NAVIGATION =====
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .background(Color(0xFF1E293B))
+                .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu)
+                CartoonNavItem(emoji = "🗂️", label = "Categories", isSelected = true, onClick = {})
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
+                CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends)
+            }
+        }
     }
 }

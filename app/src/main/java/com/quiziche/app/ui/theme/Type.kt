@@ -15,46 +15,47 @@ val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-val FredokaOne = FontFamily(
+// Nunito with Black weight for that extra "fat" cartoon look
+val NunitoBlack = FontFamily(
     Font(
-        googleFont = GoogleFont("Fredoka One"),
-        fontProvider = provider
+        googleFont = GoogleFont("Nunito"),
+        fontProvider = provider,
+        weight = FontWeight.Black
     )
 )
 
-val Fredoka = FontFamily(
+val NunitoBold = FontFamily(
     Font(
-        googleFont = GoogleFont("Fredoka"),
-        fontProvider = provider,
-        weight = FontWeight.Normal
-    ),
-    Font(
-        googleFont = GoogleFont("Fredoka"),
-        fontProvider = provider,
-        weight = FontWeight.SemiBold
-    ),
-    Font(
-        googleFont = GoogleFont("Fredoka"),
+        googleFont = GoogleFont("Nunito"),
         fontProvider = provider,
         weight = FontWeight.Bold
+    ),
+    Font(
+        googleFont = GoogleFont("Nunito"),
+        fontProvider = provider,
+        weight = FontWeight.Normal
     )
 )
 
-// Material3 Typography using Fredoka
+// Compatibility aliases
+val FredokaOne = NunitoBlack
+val Fredoka = NunitoBold
+
+// Material3 Typography with extra weight
 val AppTypography = Typography(
-    displayLarge = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 57.sp),
-    displayMedium = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 45.sp),
-    displaySmall = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 36.sp),
-    headlineLarge = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 32.sp),
-    headlineMedium = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 28.sp),
-    headlineSmall = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 24.sp),
-    titleLarge = TextStyle(fontFamily = FredokaOne, fontWeight = FontWeight.Normal, fontSize = 22.sp),
-    titleMedium = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
-    titleSmall = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-    bodyLarge = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Normal, fontSize = 16.sp),
-    bodyMedium = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Normal, fontSize = 14.sp),
-    bodySmall = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Normal, fontSize = 12.sp),
-    labelLarge = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-    labelMedium = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
-    labelSmall = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 11.sp)
+    displayLarge = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 57.sp),
+    displayMedium = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 45.sp),
+    displaySmall = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 36.sp),
+    headlineLarge = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 32.sp),
+    headlineMedium = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 28.sp),
+    headlineSmall = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 24.sp),
+    titleLarge = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 22.sp),
+    titleMedium = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 18.sp),
+    titleSmall = TextStyle(fontFamily = NunitoBlack, fontWeight = FontWeight.Black, fontSize = 14.sp),
+    bodyLarge = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+    bodyMedium = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Bold, fontSize = 14.sp),
+    bodySmall = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Bold, fontSize = 12.sp),
+    labelLarge = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Black, fontSize = 14.sp),
+    labelMedium = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Black, fontSize = 12.sp),
+    labelSmall = TextStyle(fontFamily = NunitoBold, fontWeight = FontWeight.Black, fontSize = 11.sp)
 )

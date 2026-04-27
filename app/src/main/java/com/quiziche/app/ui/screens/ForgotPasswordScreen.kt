@@ -92,12 +92,7 @@ fun ForgotPasswordScreen(
         ) {
             // Back
             Row(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape)
-                        .background(Color.White.copy(0.15f)).border(2.dp, Color.White.copy(0.3f), CircleShape)
-                        .clickable { onNavigateBack() },
-                    contentAlignment = Alignment.Center
-                ) { Text("←", fontSize = 20.sp, color = Color.White) }
+                ModernBackButton(onClick = onNavigateBack)
             }
             Spacer(modifier = Modifier.height(32.dp))
 

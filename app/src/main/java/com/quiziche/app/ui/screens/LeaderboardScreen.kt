@@ -25,6 +25,7 @@ import com.quiziche.app.data.model.User
 import com.quiziche.app.data.repository.GameRepository
 import com.quiziche.app.data.repository.UserRepository
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -56,32 +57,28 @@ fun LeaderboardScreen(
     )
 
     Box(modifier = Modifier.fillMaxSize()
-        .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))))
+        .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 // ===== HEADER =====
                 Box(
                     modifier = Modifier.fillMaxWidth()
+                        .shadow(elevation = 10.dp, shape = RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp), spotColor = Color.Black.copy(0.8f))
                         .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
-                        .border(0.dp, Color.Transparent)
+                        .border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
                         .padding(horizontal = 24.dp, vertical = 32.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                                .background(Color.White.copy(0.3f)).border(2.dp, Color(0xFF1E1B4B), CircleShape)
-                                .clickable { onNavigateBack() },
-                                contentAlignment = Alignment.Center) {
-                                Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
-                            }
+                            ModernBackButton(onClick = onNavigateBack)
                             Spacer(modifier = Modifier.weight(1f))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("🏆", fontSize = 80.sp, modifier = Modifier.scale(trophyScale))
-                        Text("Global Rankings", fontFamily = FredokaOne, fontSize = 30.sp, color = Color(0xFF1E1B4B))
-                        Text("Who's the Quiz Champion? 👑", fontFamily = Fredoka, fontSize = 15.sp, color = Color(0xFF78350F))
+                        Text("Global Rankings", fontFamily = FredokaOne, fontSize = 30.sp, color = Color(0xFF78350F))
+                        Text("Who's the Quiz Champion? 👑", fontFamily = Fredoka, fontSize = 15.sp, color = Color(0xFF78350F).copy(0.8f))
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -118,45 +115,43 @@ fun LeaderboardScreen(
 
                     Box(
                         modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 5.dp)
-                            .fillMaxWidth()
-                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(0.6f))
                             .clip(RoundedCornerShape(20.dp))
-                            .background(if (isCurrentUser) Color(0xFFEDE9FE) else Color.White)
-                            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp))
+                            .background(if (isCurrentUser) Color(0xFF334155) else Color(0xFF1E293B))
+                            .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(20.dp))
                             .padding(14.dp)
                     ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 // Rank badge
                                 Box(modifier = Modifier.size(36.dp).clip(CircleShape)
-                                    .background(Color(0xFF1E1B4B)),
+                                    .background(Color(0xFF475569)),
                                     contentAlignment = Alignment.Center) {
                                     Text("#$rank", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 // Avatar
                                 Box(modifier = Modifier.size(44.dp).clip(CircleShape)
-                                    .background(Color(0xFFFEF3C7)).border(2.dp, Color(0xFF1E1B4B), CircleShape),
+                                    .background(Color.White.copy(0.05f)).border(1.5.dp, Color.White.copy(0.15f), CircleShape),
                                     contentAlignment = Alignment.Center) {
                                     Text(user.avatarIcon, fontSize = 22.sp)
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(if (isCurrentUser) "You 👋" else user.name, fontFamily = FredokaOne,
-                                        color = Color(0xFF1E1B4B), fontSize = 15.sp)
-                                    Text(user.getClassName(), fontFamily = Fredoka, color = Color(0xFF7C3AED), fontSize = 12.sp)
+                                        color = Color.White, fontSize = 15.sp)
+                                    Text(user.getClassName(), fontFamily = Fredoka, color = Color(0xFFC4B5FD), fontSize = 12.sp)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
                                     Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFFFBBF24)).border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(10.dp))
+                                        .background(Color(0xFFFBBF24)).border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(10.dp))
                                         .padding(horizontal = 8.dp, vertical = 2.dp)) {
-                                        Text("⚡ ${user.elo}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color(0xFF1E1B4B))
+                                        Text("⚡ ${user.elo}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color(0xFF78350F))
                                     }
                                     if (!isCurrentUser) {
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
-                                            .background(if (inviteSentTo == user.uid) Color(0xFF9CA3AF) else Color(0xFF10B981))
-                                            .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(10.dp))
+                                            .background(if (inviteSentTo == user.uid) Color(0xFF4B5563) else Color(0xFF059669))
+                                            .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(10.dp))
                                             .clickable(enabled = inviteSentTo != user.uid) {
                                                 scope.launch {
                                                     val r = gameRepository.sendInvite(user.uid, currentUserName)
@@ -191,14 +186,18 @@ fun PodiumCard(user: User, rank: Int, height: androidx.compose.ui.unit.Dp, modif
     }
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(emoji, fontSize = 32.sp)
-        Box(modifier = Modifier.size(54.dp).clip(CircleShape).background(brush)
-            .border(3.dp, Color(0xFF1E1B4B), CircleShape), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier
+            .shadow(elevation = 10.dp, shape = CircleShape, spotColor = Color.Black.copy(0.6f))
+            .size(54.dp).clip(CircleShape).background(brush)
+            .border(1.5.dp, Color.White.copy(0.2f), CircleShape), contentAlignment = Alignment.Center) {
             Text(user.avatarIcon, fontSize = 26.sp)
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text(user.name.split(" ").first(), fontFamily = FredokaOne, fontSize = 12.sp, color = Color(0xFF1E1B4B))
-        Box(modifier = Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
-            .background(brush).border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
+        Text(user.name.split(" ").first(), fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+        Box(modifier = Modifier.fillMaxWidth().height(height)
+            .shadow(elevation = 14.dp, shape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp), spotColor = Color.Black.copy(0.7f))
+            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+            .background(brush).border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
             contentAlignment = Alignment.Center) {
             Text("${user.elo}", fontFamily = FredokaOne, fontSize = 14.sp, color = Color.White)
         }

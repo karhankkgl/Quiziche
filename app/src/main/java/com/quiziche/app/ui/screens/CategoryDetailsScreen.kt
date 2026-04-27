@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 
 data class Category(
     val id: String,
@@ -64,11 +65,7 @@ fun CategoryDetailsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))
-                )
-            )
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         Column(
             modifier = Modifier
@@ -78,17 +75,12 @@ fun CategoryDetailsScreen(
         ) {
             // Header
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                    .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
-                    .clickable { onNavigateBack() },
-                    contentAlignment = Alignment.Center) {
-                    Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
-                }
+                ModernBackButton(onClick = onNavigateBack)
                 Spacer(modifier = Modifier.width(14.dp))
-                Text("Category Details", fontFamily = FredokaOne, fontSize = 22.sp, color = Color(0xFF1E1B4B))
+                Text("Category Details", fontFamily = FredokaOne, fontSize = 22.sp, color = Color.White)
             }
 
             // Category Banner

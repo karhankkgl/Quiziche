@@ -65,7 +65,7 @@ fun OngoingGamesScreen(
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 36.dp)
@@ -73,6 +73,7 @@ fun OngoingGamesScreen(
             // Header
             Box(
                 modifier = Modifier.fillMaxWidth()
+                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp), spotColor = Color.Black.copy(0.8f))
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                     .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFF97316))))
                     .padding(horizontal = 24.dp, vertical = 28.dp)
@@ -103,17 +104,23 @@ fun OngoingGamesScreen(
                 }
             } else if (activeGames.isEmpty()) {
                 Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                    Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp)
-                        .clip(RoundedCornerShape(24.dp)).background(Color(0xFF1E1B4B)))
-                    Box(modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp)).background(Color.White)
-                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp)).padding(36.dp),
-                        contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color.White.copy(0.15f).copy(0.25f))
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White)
+                        .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp))
+                        .background(Color(0xFF1E293B))
+                        .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(24.dp))
+                        .padding(36.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("⚡", fontSize = 60.sp, modifier = Modifier.scale(lightningScale))
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("No Active Battles!", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
-                            Text("Start a game to see it here", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
+                            Text("No Active Battles!", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
+                            Text("Start a game to see it here", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 14.sp)
                         }
                     }
                 }
@@ -152,30 +159,30 @@ fun CartoonOngoingGameRow(info: OngoingGameInfo, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color.White.copy(0.15f).copy(0.4f))
             .clip(RoundedCornerShape(24.dp))
             .background(brush)
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+            .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp))
             .padding(16.dp)
     ) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
                         .background(Color.White.copy(if (info.isYourTurn) 0.25f else 0.8f))
-                        .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(16.dp)),
+                        .border(2.dp, Color.White.copy(0.15f), RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center) {
                         Text(info.opponentIcon, fontSize = 28.sp)
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text("vs ${info.name}", fontFamily = FredokaOne,
-                            color = if (info.isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 17.sp)
+                            color = if (info.isYourTurn) Color.White else Color.White.copy(0.9f), fontSize = 17.sp)
                         Text(info.category, fontFamily = Fredoka,
-                            color = if (info.isYourTurn) Color.White.copy(0.8f) else Color(0xFF6B7280), fontSize = 13.sp)
+                            color = if (info.isYourTurn) Color.White.copy(0.8f) else Color.White.copy(0.6f), fontSize = 13.sp)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(info.score, fontFamily = FredokaOne,
-                            color = if (info.isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 20.sp)
+                            color = if (info.isYourTurn) Color.White else Color.White.copy(0.9f), fontSize = 20.sp)
                         Box(modifier = Modifier.clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFEF4444).copy(0.8f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
                             Text(info.time, fontFamily = Fredoka, color = Color.White, fontSize = 11.sp)
@@ -186,7 +193,7 @@ fun CartoonOngoingGameRow(info: OngoingGameInfo, onClick: () -> Unit) {
                 Box(modifier = Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (info.isYourTurn) Color.White else Color(0xFFEDE9FE))
-                    .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(14.dp))
+                    .border(2.dp, Color.White.copy(0.15f), RoundedCornerShape(14.dp))
                     .clickable { onClick() }
                     .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center) {
@@ -209,7 +216,7 @@ fun OngoingDecorations(lightningScale: Float, swordRotate: Float) {
 fun GamesSectionHeader(title: String, count: Int, subtitle: String, color: Color) {
     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
+            Text(title, fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
             Spacer(modifier = Modifier.width(8.dp))
             Box(modifier = Modifier.clip(CircleShape).background(color).padding(horizontal = 8.dp, vertical = 2.dp)) {
                 Text("$count", fontFamily = FredokaOne, color = Color.White, fontSize = 13.sp)

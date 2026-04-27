@@ -62,7 +62,7 @@ fun GameSettingsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFEDE9FE), Color(0xFFFEF3C7))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         // Circle decoration top-left
         Box(
@@ -82,20 +82,15 @@ fun GameSettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier.size(42.dp).clip(CircleShape)
-                        .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
-                        .clickable { onNavigateBack() },
-                    contentAlignment = Alignment.Center
-                ) { Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B)) }
+                ModernBackButton(onClick = onNavigateBack)
                 Spacer(modifier = Modifier.width(16.dp))
-                Text("Game Setup 🎯", fontFamily = FredokaOne, fontSize = 26.sp, color = Color(0xFF1E1B4B))
+                Text("Game Setup 🎯", fontFamily = FredokaOne, fontSize = 26.sp, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(28.dp))
 
             // Mode Section Label
-            Text("🎮  Choose Mode", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp,
+            Text("🎮  Choose Mode", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp,
                 modifier = Modifier.padding(bottom = 14.dp))
 
             // Mode cards
@@ -107,17 +102,17 @@ fun GameSettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(110.dp)
-                            .then(if (isSelected) Modifier.shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f)) else Modifier)
+                            .then(if (isSelected) Modifier.shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color.Black.copy(0.8f)) else Modifier)
                             .clip(RoundedCornerShape(22.dp))
-                            .background(if (isSelected) brush else Brush.linearGradient(listOf(Color.White, Color(0xFFF9FAFB))))
-                            .border(3.dp, if (isSelected) Color(0xFF1E1B4B) else Color(0xFFE5E7EB), RoundedCornerShape(22.dp))
+                            .background(if (isSelected) brush else Brush.linearGradient(listOf(Color.White.copy(0.05f), Color.White.copy(0.05f))))
+                            .border(1.5.dp, if (isSelected) Color.White.copy(0.3f) else Color.White.copy(0.1f), RoundedCornerShape(22.dp))
                             .clickable { gameMode = mode }
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(label, fontFamily = FredokaOne, fontSize = 14.sp,
-                                color = if (isSelected) Color.White else Color(0xFF1E1B4B),
+                                color = if (isSelected) Color.White else Color(0xFF475569),
                                 textAlign = TextAlign.Center)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(desc, fontFamily = Fredoka, fontSize = 11.sp,
@@ -159,23 +154,23 @@ fun GameSettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Category
-            Text("🗂️  Pick Category", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp,
+            Text("🗂️  Pick Category", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp,
                 modifier = Modifier.padding(bottom = 12.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color.Black.copy(0.6f))
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White)
-                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(18.dp))
+                    .background(Color(0xFF1E293B))
+                    .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(18.dp))
                     .clickable { categoryDropdownExpanded = true }
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(selectedCategory, fontFamily = Fredoka, color = Color(0xFF1E1B4B), fontSize = 16.sp)
+                    Text(selectedCategory, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp)
                     Icon(Icons.Default.KeyboardArrowDown, null, tint = Color(0xFF7C3AED))
                 }
                 DropdownMenu(
@@ -185,7 +180,7 @@ fun GameSettingsScreen(
                 ) {
                     categories.forEach { category ->
                         DropdownMenuItem(
-                            text = { Text(category, fontFamily = Fredoka, color = Color(0xFF1E1B4B)) },
+                            text = { Text(category, fontFamily = Fredoka, color = Color(0xFF475569)) },
                             onClick = { selectedCategory = category; categoryDropdownExpanded = false }
                         )
                     }
@@ -204,7 +199,7 @@ fun GameSettingsScreen(
             val btnBrush = modeColors[gameMode] ?: Brush.linearGradient(listOf(Color.Gray, Color.DarkGray))
 
             CartoonButton(text = btnLabel, onClick = { onNavigateToNext(gameMode, backendCategory) },
-                bgBrush = btnBrush, textColor = Color.White, borderColor = Color(0xFF1E1B4B))
+                bgBrush = btnBrush, textColor = Color.White, borderColor = Color(0xFF475569))
 
             if (gameMode == "random") {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -214,8 +209,6 @@ fun GameSettingsScreen(
         }
 
         // Decorations (on top)
-        Text("🎮", fontSize = 60.sp, modifier = Modifier.offset(290.dp, 60.dp).rotate(controllerRotate))
-        Text("🕹️", fontSize = 40.sp, modifier = Modifier.offset(20.dp, 120.dp).offset(y = bounce.dp))
         Text("⭐", fontSize = 24.sp, modifier = Modifier.offset(50.dp, 70.dp), color = Color(0xFFFBBF24))
         Text("✨", fontSize = 18.sp, modifier = Modifier.offset(280.dp, 180.dp))
     }

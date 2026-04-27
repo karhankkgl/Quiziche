@@ -9,28 +9,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.data.model.User
 import com.quiziche.app.data.repository.AuthRepository
 import com.quiziche.app.data.repository.UserRepository
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToMainMenu: () -> Unit,
+    onNavigateToCategories: () -> Unit,
+    onNavigateToLeaderboard: () -> Unit
 ) {
     val userRepository = remember { UserRepository() }
     val authRepository = remember { AuthRepository() }
@@ -60,35 +63,22 @@ fun FriendsScreen(
         initialValue = 0f, targetValue = -12f,
         animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "d"
     )
-    val waveRotate by infiniteTransition.animateFloat(
-        initialValue = -5f, targetValue = 5f,
-        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "w"
-    )
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFECFEFF), Color(0xFFCFFAFE), Color(0xFFEDE9FE))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
-        // Decorations
-        Column(modifier = Modifier.fillMaxSize().padding(top = 48.dp)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Header
             Box(
                 modifier = Modifier.fillMaxWidth()
+                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp), spotColor = Color(0xFF475569).copy(0.4f))
                     .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                     .background(Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6))))
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
+                    .padding(top = 48.dp, bottom = 20.dp, start = 24.dp, end = 24.dp)
             ) {
                 Column {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                            .background(Color.White.copy(0.2f)).border(2.dp, Color.White.copy(0.4f), CircleShape)
-                            .clickable { onNavigateBack() },
-                            contentAlignment = Alignment.Center) {
-                            Text("←", fontSize = 20.sp, color = Color.White)
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Text("🐬  Friends", fontFamily = FredokaOne, fontSize = 26.sp, color = Color.White)
-                    }
+                    Text("🐬  Friends", fontFamily = FredokaOne, fontSize = 26.sp, color = Color.White)
                     Spacer(modifier = Modifier.height(16.dp))
                     // Search
                     Row(
@@ -120,30 +110,29 @@ fun FriendsScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("🐬 My Friends", "📨 Requests").forEachIndexed { idx, title ->
                     val isSelected = selectedTab == idx
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (isSelected) {
-                            Box(modifier = Modifier.fillMaxWidth().offset(3.dp, 4.dp).height(44.dp)
-                                .clip(RoundedCornerShape(16.dp)).background(Color(0xFF1E1B4B)))
-                        }
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(44.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isSelected) Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6)))
-                                    else Brush.horizontalGradient(listOf(Color.White, Color(0xFFF3F4F6))))
-                                .border(3.dp, if (isSelected) Color(0xFF1E1B4B) else Color(0xFFE5E7EB), RoundedCornerShape(16.dp))
-                                .clickable { selectedTab = idx },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(title, fontFamily = FredokaOne, fontSize = 14.sp,
-                                color = if (isSelected) Color.White else Color(0xFF1E1B4B))
-                        }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .shadow(elevation = if (isSelected) 8.dp else 4.dp, shape = RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (isSelected) Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6)))
+                                else Brush.linearGradient(listOf(Color.White.copy(0.05f), Color.White.copy(0.05f)))
+                            )
+                            .border(1.5.dp, if (isSelected) Color.White.copy(0.2f) else Color.White.copy(0.1f), RoundedCornerShape(16.dp))
+                            .clickable { selectedTab = idx }
+                            .height(44.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(title, fontFamily = FredokaOne, fontSize = 14.sp,
+                            color = if (isSelected) Color.White else Color.White.copy(0.7f))
                     }
                 }
             }
 
             // List
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                modifier = Modifier.weight(1f).padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (selectedTab == 0) {
@@ -156,15 +145,16 @@ fun FriendsScreen(
                     } else if (friendsList.isEmpty()) {
                         item {
                             Box(modifier = Modifier.fillMaxWidth()
+                                .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF475569).copy(0.25f))
                                 .clip(RoundedCornerShape(24.dp))
-                                .background(Color.White).border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                                .background(Color(0xFF1E293B)).border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(24.dp))
                                 .padding(28.dp),
                                 contentAlignment = Alignment.Center) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text("🐬", fontSize = 56.sp, modifier = Modifier.offset(y = dolphinY.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text("No friends yet!", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
-                                    Text("Invite someone to play!", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
+                                    Text("No friends yet!", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
+                                    Text("Invite someone to play!", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 14.sp)
                                 }
                             }
                         }
@@ -177,18 +167,37 @@ fun FriendsScreen(
                 } else {
                     item {
                         Box(modifier = Modifier.fillMaxWidth()
+                            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF475569).copy(0.25f))
                             .clip(RoundedCornerShape(24.dp))
-                            .background(Color.White).border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                            .background(Color(0xFF1E293B)).border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(24.dp))
                             .padding(24.dp), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("📨", fontSize = 48.sp)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("No pending requests", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 16.sp)
+                                Text("No pending requests", fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
                             }
                         }
                     }
                 }
-                item { Spacer(modifier = Modifier.height(16.dp)) }
+                item { Spacer(modifier = Modifier.height(88.dp)) }
+            }
+        }
+
+        // ===== BOTTOM NAVIGATION =====
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .background(Color(0xFF1E293B))
+                .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu)
+                CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories)
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
+                CartoonNavItem(emoji = "🦁", label = "Friends", isSelected = true, onClick = {})
             }
         }
     }
@@ -199,22 +208,22 @@ fun CartoonFriendItem(friend: User) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(20.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(0.6f))
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White)
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp))
+            .background(Color(0xFF1E293B))
+            .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(20.dp))
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(50.dp).clip(CircleShape)
                 .background(Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6))))
-                .border(2.dp, Color(0xFF1E1B4B), CircleShape),
+                .border(2.dp, Color(0xFF475569), CircleShape),
                 contentAlignment = Alignment.Center) {
                 Text(friend.avatarIcon, fontSize = 26.sp)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(friend.name, fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 16.sp)
+                Text(friend.name, fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -223,31 +232,10 @@ fun CartoonFriendItem(friend: User) {
             }
             Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6))))
-                .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(12.dp))
+                .border(2.dp, Color(0xFF475569), RoundedCornerShape(12.dp))
                 .padding(horizontal = 14.dp, vertical = 6.dp)) {
                 Text("⚔️ Battle", fontFamily = FredokaOne, fontSize = 13.sp, color = Color.White)
             }
-        }
-    }
-}
-
-@Composable
-fun FriendListItem(name: String, status: String, icon: String) {
-    CartoonFriendItem(friend = User(name = name, avatarIcon = icon))
-}
-
-@Composable
-fun FriendRequestItem(name: String, icon: String) {
-    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
-        .background(Color.White).border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp)).padding(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFFEDE9FE))
-                .border(2.dp, Color(0xFF1E1B4B), CircleShape), contentAlignment = Alignment.Center) {
-                Text(icon, fontSize = 22.sp)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(name, fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 15.sp, modifier = Modifier.weight(1f))
-            Text("✓", fontSize = 20.sp, color = Color(0xFF10B981))
         }
     }
 }

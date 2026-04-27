@@ -78,13 +78,13 @@ fun GameResultsScreen(
             Box(
                 modifier = Modifier.clip(RoundedCornerShape(20.dp))
                     .background(if (isWinner) Color(0xFFFBBF24) else Color.White.copy(0.15f))
-                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp))
+                    .border(3.dp, Color(0xFF475569), RoundedCornerShape(20.dp))
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = if (isWinner) "🎉  VICTORY!" else "😢  SO CLOSE!",
                     fontFamily = FredokaOne, fontSize = 26.sp,
-                    color = if (isWinner) Color(0xFF1E1B4B) else Color.White
+                    color = if (isWinner) Color(0xFF475569) else Color.White
                 )
             }
 
@@ -97,68 +97,63 @@ fun GameResultsScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             // Score cards
-            Box(modifier = Modifier.fillMaxWidth()) {
-                // Shadow
-                Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp).clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF1E1B4B)))
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(if (isWinner) Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))
-                            else Brush.horizontalGradient(listOf(Color.White.copy(0.1f), Color.White.copy(0.08f))))
-                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
-                        .padding(20.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(60.dp).clip(CircleShape)
-                            .background(Color.White.copy(if (isWinner) 0.3f else 0.15f))
-                            .border(2.dp, Color(0xFF1E1B4B), CircleShape),
-                            contentAlignment = Alignment.Center) {
-                            Text("🎮", fontSize = 28.sp)
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(if (isWinner) "WINNER" else "PLAYER", fontFamily = Fredoka,
-                                color = if (isWinner) Color(0xFF78350F) else Color.White.copy(0.6f), fontSize = 11.sp)
-                            Text(userNickname, fontFamily = FredokaOne,
-                                color = if (isWinner) Color(0xFF1E1B4B) else Color.White, fontSize = 18.sp)
-                        }
-                        Text("$score", fontFamily = FredokaOne, fontSize = 44.sp,
-                            color = if (isWinner) Color(0xFF1E1B4B) else Color.White)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp), spotColor = Color(0xFF475569).copy(0.4f))
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(if (isWinner) Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))
+                        else Brush.horizontalGradient(listOf(Color.White.copy(0.1f), Color.White.copy(0.08f))))
+                    .border(3.dp, Color(0xFF475569), RoundedCornerShape(28.dp))
+                    .padding(20.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(60.dp).clip(CircleShape)
+                        .background(Color.White.copy(if (isWinner) 0.3f else 0.15f))
+                        .border(2.dp, Color(0xFF475569), CircleShape),
+                        contentAlignment = Alignment.Center) {
+                        Text("🎮", fontSize = 28.sp)
                     }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(if (isWinner) "WINNER" else "PLAYER", fontFamily = Fredoka,
+                            color = if (isWinner) Color(0xFF78350F) else Color.White.copy(0.6f), fontSize = 11.sp)
+                        Text(userNickname, fontFamily = FredokaOne,
+                            color = if (isWinner) Color(0xFF475569) else Color.White, fontSize = 18.sp)
+                    }
+                    Text("$score", fontFamily = FredokaOne, fontSize = 44.sp,
+                        color = if (isWinner) Color(0xFF475569) else Color.White)
                 }
             }
 
             if (!isSingleplayer) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp).clip(RoundedCornerShape(28.dp))
-                        .background(Color(0xFF1E1B4B)))
-                    Box(
-                        modifier = Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(28.dp))
-                            .background(if (!isWinner) Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))
-                                else Brush.horizontalGradient(listOf(Color.White.copy(0.1f), Color.White.copy(0.08f))))
-                            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
-                            .padding(20.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(60.dp).clip(CircleShape)
-                                .background(Color.White.copy(if (!isWinner) 0.3f else 0.15f))
-                                .border(2.dp, Color(0xFF1E1B4B), CircleShape),
-                                contentAlignment = Alignment.Center) {
-                                Text("🎯", fontSize = 28.sp)
-                            }
-                            Spacer(modifier = Modifier.width(14.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(if (!isWinner) "WINNER" else "2ND PLACE", fontFamily = Fredoka,
-                                    color = if (!isWinner) Color(0xFF78350F) else Color.White.copy(0.6f), fontSize = 11.sp)
-                                Text(opponentName, fontFamily = FredokaOne,
-                                    color = if (!isWinner) Color(0xFF1E1B4B) else Color.White, fontSize = 18.sp)
-                            }
-                            Text("$opponentScore", fontFamily = FredokaOne, fontSize = 44.sp,
-                                color = if (!isWinner) Color(0xFF1E1B4B) else Color.White)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp), spotColor = Color(0xFF475569).copy(0.4f))
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(if (!isWinner) Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))
+                            else Brush.horizontalGradient(listOf(Color.White.copy(0.1f), Color.White.copy(0.08f))))
+                        .border(3.dp, Color(0xFF475569), RoundedCornerShape(28.dp))
+                        .padding(20.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(60.dp).clip(CircleShape)
+                            .background(Color.White.copy(if (!isWinner) 0.3f else 0.15f))
+                            .border(2.dp, Color(0xFF475569), CircleShape),
+                            contentAlignment = Alignment.Center) {
+                            Text("🎯", fontSize = 28.sp)
                         }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(if (!isWinner) "WINNER" else "2ND PLACE", fontFamily = Fredoka,
+                                color = if (!isWinner) Color(0xFF78350F) else Color.White.copy(0.6f), fontSize = 11.sp)
+                            Text(opponentName, fontFamily = FredokaOne,
+                                color = if (!isWinner) Color(0xFF475569) else Color.White, fontSize = 18.sp)
+                        }
+                        Text("$opponentScore", fontFamily = FredokaOne, fontSize = 44.sp,
+                            color = if (!isWinner) Color(0xFF475569) else Color.White)
                     }
                 }
             }
@@ -166,32 +161,33 @@ fun GameResultsScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Stats card
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp).clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF1E1B4B)))
-                Box(modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp)).background(Color.White.copy(0.1f))
-                    .border(3.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp)).padding(20.dp)
-                ) {
-                    Column {
-                        Text("📊  Match Stats", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            val accuracy = if (totalQuestions > 0) (score * 100) / totalQuestions else 0
-                            ResultStatChip("$totalQuestions", "Questions")
-                            ResultStatChip("$score", "Correct", Color(0xFF86EFAC))
-                            ResultStatChip("$accuracy%", "Accuracy", Color(0xFFFBBF24))
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = Color.White.copy(0.1f))
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("🪙  Coins Earned", fontFamily = Fredoka, color = Color.White.copy(0.7f), fontSize = 14.sp)
-                            Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFFFBBF24)).border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(12.dp))
-                                .padding(horizontal = 12.dp, vertical = 4.dp)) {
-                                Text("+${score * 5} 🪙", fontFamily = FredokaOne, fontSize = 16.sp, color = Color(0xFF1E1B4B))
-                            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF475569).copy(0.3f))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White.copy(0.1f))
+                    .border(3.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp))
+                    .padding(20.dp)
+            ) {
+                Column {
+                    Text("📊  Match Stats", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        val accuracy = if (totalQuestions > 0) (score * 100) / totalQuestions else 0
+                        ResultStatChip("$totalQuestions", "Questions")
+                        ResultStatChip("$score", "Correct", Color(0xFF86EFAC))
+                        ResultStatChip("$accuracy%", "Accuracy", Color(0xFFFBBF24))
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = Color.White.copy(0.1f))
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("🪙  Coins Earned", fontFamily = Fredoka, color = Color.White.copy(0.7f), fontSize = 14.sp)
+                        Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFFBBF24)).border(2.dp, Color(0xFF475569), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 4.dp)) {
+                            Text("+${score * 5} 🪙", fontFamily = FredokaOne, fontSize = 16.sp, color = Color(0xFF475569))
                         }
                     }
                 }
@@ -203,19 +199,21 @@ fun GameResultsScreen(
                 text = "⚡  Play Again!",
                 onClick = onNavigateToRematch,
                 bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
-                textColor = Color(0xFF1E1B4B)
+                textColor = Color(0xFF475569)
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp).height(52.dp)
-                    .clip(RoundedCornerShape(18.dp)).background(Color(0xFF1E1B4B).copy(0.5f)))
-                Box(modifier = Modifier.fillMaxWidth().height(52.dp)
-                    .clip(RoundedCornerShape(18.dp)).background(Color.White.copy(0.12f))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFF475569).copy(0.3f))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(0.12f))
                     .border(2.dp, Color.White.copy(0.2f), RoundedCornerShape(18.dp))
-                    .clickable { onNavigateToMainMenu() },
-                    contentAlignment = Alignment.Center) {
-                    Text("🏠  Main Menu", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
-                }
+                    .clickable { onNavigateToMainMenu() }
+                    .height(52.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🏠  Main Menu", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
             }
         }
 

@@ -29,6 +29,7 @@ import com.quiziche.app.data.model.User
 import com.quiziche.app.data.repository.AuthRepository
 import com.quiziche.app.data.repository.UserRepository
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 
 data class MatchResult(
     val id: Int,
@@ -78,7 +79,7 @@ fun ProfileScreen(
 
     Box(
         modifier = Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFF5F3FF), Color(0xFFEDE9FE))))
+            .background(Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A))))
     ) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 36.dp)
@@ -86,18 +87,14 @@ fun ProfileScreen(
             // ===== HEADER BAR =====
             Box(
                 modifier = Modifier.fillMaxWidth()
+                    .shadow(elevation = 12.dp, shape = RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp), spotColor = Color(0xFF475569).copy(0.4f))
                     .clip(RoundedCornerShape(bottomStart = 36.dp, bottomEnd = 36.dp))
                     .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))))
                     .padding(horizontal = 24.dp, vertical = 24.dp)
             ) {
                 Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Box(modifier = Modifier.size(42.dp).clip(CircleShape)
-                            .background(Color.White.copy(0.2f)).border(2.dp, Color.White.copy(0.4f), CircleShape)
-                            .clickable { onNavigateBack() },
-                            contentAlignment = Alignment.Center) {
-                            Text("←", fontSize = 20.sp, color = Color.White)
-                        }
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        ModernBackButton(onClick = onNavigateBack)
                         Text("My Profile", fontFamily = FredokaOne, fontSize = 22.sp, color = Color.White)
                         Box(modifier = Modifier.size(42.dp).clip(CircleShape)
                             .background(Color(0xFFEF4444).copy(0.7f)).border(2.dp, Color.White.copy(0.3f), CircleShape)
@@ -111,7 +108,9 @@ fun ProfileScreen(
 
                     // Avatar
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(80.dp).clip(CircleShape)
+                        Box(modifier = Modifier
+                            .shadow(elevation = 10.dp, shape = CircleShape, spotColor = Color(0xFF475569).copy(0.3f))
+                            .size(80.dp).clip(CircleShape)
                             .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
                             .border(4.dp, Color.White, CircleShape).scale(avatarScale),
                             contentAlignment = Alignment.Center) {
@@ -125,9 +124,9 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row {
                                 Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFFFBBF24)).border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFFBBF24)).border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(10.dp))
                                     .padding(horizontal = 8.dp, vertical = 3.dp)) {
-                                    Text("⚡ ${userProfile?.elo ?: 1000} ELO", fontFamily = FredokaOne, fontSize = 12.sp, color = Color(0xFF1E1B4B))
+                                    Text("⚡ ${userProfile?.elo ?: 1000} ELO", fontFamily = FredokaOne, fontSize = 12.sp, color = Color(0xFF78350F))
                                 }
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
@@ -163,10 +162,10 @@ fun ProfileScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(90.dp)
-                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = brushes[i].toString().substring(0, 10).let { Color(0xFF1E1B4B).copy(0.3f) })
+                            .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color.Black.copy(0.7f))
                             .clip(RoundedCornerShape(18.dp))
                             .background(brushes[i])
-                            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(18.dp))
+                            .border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(18.dp))
                             .padding(10.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -184,20 +183,20 @@ fun ProfileScreen(
             // ===== MATCH HISTORY =====
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("⚔️  Match History", fontFamily = FredokaOne, fontSize = 20.sp, color = Color(0xFF1E1B4B))
+                Text("⚔️  Match History", fontFamily = FredokaOne, fontSize = 20.sp, color = Color.White)
             }
             Spacer(modifier = Modifier.height(12.dp))
 
             if (matchHistory.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(20.dp)).background(Color.White)
-                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp)).padding(28.dp),
+                    .clip(RoundedCornerShape(20.dp)).background(Color(0xFF1E293B))
+                    .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(20.dp)).padding(28.dp),
                     contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("🎮", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("No matches yet!", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
-                        Text("Start playing to see your history", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("No matches yet!", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
+                        Text("Start playing to see your history", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 14.sp)
                     }
                 }
             } else {
@@ -222,16 +221,16 @@ fun CartoonMatchHistoryCard(match: MatchResult) {
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth()
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(20.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(0.8f))
             .clip(RoundedCornerShape(20.dp))
-            .background(if (isWin) Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9)))
-                else Brush.horizontalGradient(listOf(Color(0xFFEF4444), Color(0xFFF97316))))
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(20.dp))
+            .background(if (isWin) Brush.horizontalGradient(listOf(Color(0xFF059669), Color(0xFF0284C7)))
+                else Brush.horizontalGradient(listOf(Color(0xFFDC2626), Color(0xFFEA580C))))
+            .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(20.dp))
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(44.dp).clip(CircleShape)
-                .background(Color.White.copy(0.25f)).border(2.dp, Color(0xFF1E1B4B), CircleShape),
+                .background(Color.White.copy(0.25f)).border(2.dp, Color(0xFF475569), CircleShape),
                 contentAlignment = Alignment.Center) {
                 Text(match.opponentIcon, fontSize = 22.sp)
             }
@@ -263,15 +262,15 @@ fun ProfileStatCard(
 ) {
     Box(modifier = modifier) {
         Box(modifier = Modifier.fillMaxWidth().offset(3.dp, 4.dp).height(100.dp)
-            .clip(RoundedCornerShape(18.dp)).background(Color(0xFF1E1B4B)))
+            .clip(RoundedCornerShape(18.dp)).background(Color.Black.copy(0.4f)))
         Box(modifier = Modifier.fillMaxWidth().height(100.dp)
-            .clip(RoundedCornerShape(18.dp)).background(color.copy(0.15f))
-            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(18.dp)).padding(10.dp),
+            .clip(RoundedCornerShape(18.dp)).background(Color.White.copy(0.05f))
+            .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(18.dp)).padding(10.dp),
             contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(emoji ?: "📊", fontSize = 24.sp)
-                Text(value, fontFamily = FredokaOne, fontSize = 16.sp, color = Color(0xFF1E1B4B))
-                Text(label, fontFamily = Fredoka, fontSize = 10.sp, color = Color(0xFF6B7280), textAlign = TextAlign.Center)
+                Text(value, fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
+                Text(label, fontFamily = Fredoka, fontSize = 10.sp, color = Color.White.copy(0.6f), textAlign = TextAlign.Center)
             }
         }
     }
