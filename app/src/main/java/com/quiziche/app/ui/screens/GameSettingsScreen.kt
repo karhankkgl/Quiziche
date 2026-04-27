@@ -2,31 +2,30 @@ package com.quiziche.app.ui.screens
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
+import com.quiziche.app.ui.components.*
 
 @Composable
 fun GameSettingsScreen(
@@ -36,356 +35,188 @@ fun GameSettingsScreen(
 ) {
     var gameMode by remember { mutableStateOf("random") }
     var selectedCategory by remember { mutableStateOf(if (initialCategory == "all") "All Categories" else initialCategory.replaceFirstChar { it.uppercase() }) }
-    var difficulty by remember { mutableStateOf("Medium") }
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
-
     val categories = listOf("All Categories", "Science", "History", "Sports", "Art", "Music", "Geography", "Movies", "Literature", "Technology", "Food")
 
-    // Dynamic background colors
-    val bgTopColor by animateColorAsState(
-        targetValue = when (gameMode) {
-            "solo" -> Color(0xFFF0FDF4)
-            "random" -> Color(0xFFFDF4FF)
-            else -> Color(0xFFEFF6FF)
-        },
-        label = "bgTop"
+    val infiniteTransition = rememberInfiniteTransition(label = "settings_anim")
+    val controllerRotate by infiniteTransition.animateFloat(
+        initialValue = -6f, targetValue = 6f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "c"
     )
-    val bgMidColor by animateColorAsState(
-        targetValue = when (gameMode) {
-            "solo" -> Color(0xFFDCFCE7)
-            "random" -> Color(0xFFFAE8FF)
-            else -> Color(0xFFDBEAFE)
-        },
-        label = "bgMid"
+    val bounce by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = -10f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "b"
     )
-    val bgBottomColor by animateColorAsState(
-        targetValue = when (gameMode) {
-            "solo" -> Color(0xFFBBF7D0)
-            "random" -> Color(0xFFF3E8FF)
-            else -> Color(0xFFBFDBFE)
-        },
-        label = "bgBottom"
+
+    val modeData = listOf(
+        Triple("solo", "🦓 Solo", "Practice alone"),
+        Triple("random", "⚡ Ranked", "Find opponent"),
+        Triple("friend", "🦁 Friend", "Play together")
+    )
+    val modeColors = mapOf(
+        "solo" to Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9))),
+        "random" to Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899))),
+        "friend" to Brush.linearGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(bgTopColor, bgMidColor, bgBottomColor)
-                )
-            )
+            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFEDE9FE), Color(0xFFFEF3C7))))
     ) {
+        // Circle decoration top-left
+        Box(
+            modifier = Modifier.offset((-50).dp, (-50).dp).size(200.dp)
+                .clip(CircleShape).background(Color(0xFF7C3AED).copy(0.1f))
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 32.dp)
+                .padding(top = 52.dp, bottom = 36.dp)
         ) {
             // Header
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF1F2937)
-                    )
-                }
-                Text(
-                    text = "Game Setup",
-                    color = Color(0xFF1F2937),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(48.dp))
+                Box(
+                    modifier = Modifier.size(42.dp).clip(CircleShape)
+                        .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
+                        .clickable { onNavigateBack() },
+                    contentAlignment = Alignment.Center
+                ) { Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B)) }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Game Setup 🎯", fontFamily = FredokaOne, fontSize = 26.sp, color = Color(0xFF1E1B4B))
             }
 
-            // Game Mode Selection
-            Text(
-                text = "Game Mode",
-                color = Color(0xFF1F2937),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ModeCard(
-                    title = "Solo",
-                    description = "Practice",
-                    icon = Icons.Default.PersonAdd,
-                    isSelected = gameMode == "solo",
-                    activeColor = Color(0xFF22C55E),
-                    onClick = { gameMode = "solo" },
-                    modifier = Modifier.weight(1f)
-                )
-                ModeCard(
-                    title = "Ranked",
-                    description = "Find opponent",
-                    icon = Icons.Default.Groups,
-                    isSelected = gameMode == "random",
-                    activeColor = Color(0xFF9333EA),
-                    onClick = { gameMode = "random" },
-                    modifier = Modifier.weight(1f)
-                )
-                ModeCard(
-                    title = "Friend",
-                    description = "Play together",
-                    icon = Icons.Default.PersonAdd,
-                    isSelected = gameMode == "friend",
-                    activeColor = Color(0xFF3B82F6),
-                    onClick = { gameMode = "friend" },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            Spacer(modifier = Modifier.height(28.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Mode Section Label
+            Text("🎮  Choose Mode", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 14.dp))
 
-            // Dynamic Info Banner
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White.copy(alpha = 0.6f),
-                border = BorderStroke(1.dp, Color.White)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val iconColor = when (gameMode) {
-                        "solo" -> Color(0xFF22C55E)
-                        "random" -> Color(0xFF9333EA)
-                        else -> Color(0xFF3B82F6)
-                    }
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = when (gameMode) {
-                            "solo" -> "Solo mode does not affect your ELO. Play to earn XP and Coins."
-                            "random" -> "Ranked Match: Winning increases your ELO. Losing drops it."
-                            else -> "Create a room and share the invite code with your friend."
-                        },
-                        color = Color(0xFF4B5563),
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Category Filter
-            Text(
-                text = "Category Filter",
-                color = Color(0xFF1F2937),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            Box {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { categoryDropdownExpanded = true },
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.dp, Color(0xFFE5E7EB))
-                ) {
-                    Row(
+            // Mode cards
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                modeData.forEach { (mode, label, desc) ->
+                    val isSelected = gameMode == mode
+                    val brush = modeColors[mode] ?: Brush.linearGradient(listOf(Color.Gray, Color.DarkGray))
+                    Box(
                         modifier = Modifier
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
+                            .height(110.dp)
+                            .then(if (isSelected) Modifier.shadow(elevation = 8.dp, shape = RoundedCornerShape(22.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f)) else Modifier)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(if (isSelected) brush else Brush.linearGradient(listOf(Color.White, Color(0xFFF9FAFB))))
+                            .border(3.dp, if (isSelected) Color(0xFF1E1B4B) else Color(0xFFE5E7EB), RoundedCornerShape(22.dp))
+                            .clickable { gameMode = mode }
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(text = selectedCategory, color = Color(0xFF1F2937))
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = Color(0xFF9CA3AF)
-                        )
-                    }
-                }
-                DropdownMenu(
-                    expanded = categoryDropdownExpanded,
-                    onDismissRequest = { categoryDropdownExpanded = false },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .background(Color.White)
-                ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(text = category, color = Color(0xFF1F2937)) },
-                            onClick = {
-                                selectedCategory = category
-                                categoryDropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Difficulty (Hidden in Random mode)
-            if (gameMode != "random") {
-                Text(
-                    text = "Difficulty",
-                    color = Color(0xFF1F2937),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val activeColor = if (gameMode == "solo") Color(0xFF22C55E) else Color(0xFF3B82F6)
-                    listOf("Easy", "Medium", "Hard").forEach { level ->
-                        val isSelected = difficulty == level
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { difficulty = level },
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isSelected) activeColor else Color.White,
-                            border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE5E7EB))
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = level,
-                                    color = if (isSelected) Color.White else Color(0xFF1F2937),
-                                    fontSize = 14.sp
-                                )
-                            }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(label, fontFamily = FredokaOne, fontSize = 14.sp,
+                                color = if (isSelected) Color.White else Color(0xFF1E1B4B),
+                                textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(desc, fontFamily = Fredoka, fontSize = 11.sp,
+                                color = if (isSelected) Color.White.copy(0.8f) else Color(0xFF6B7280),
+                                textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Start Button
-            val backendCategory = if (selectedCategory == "All Categories") "all" else selectedCategory
-            val buttonGradient = when (gameMode) {
-                "solo" -> listOf(Color(0xFF10B981), Color(0xFF059669))
-                "random" -> listOf(Color(0xFF9333EA), Color(0xFFDB2777))
-                else -> listOf(Color(0xFF3B82F6), Color(0xFF2563EB))
-            }
-            Button(
-                onClick = { onNavigateToNext(gameMode, backendCategory) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues(0.dp),
-                shape = RoundedCornerShape(24.dp)
+            // Info banner
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(0.7f))
+                    .border(2.dp, Color(0xFFE5E7EB), RoundedCornerShape(18.dp))
+                    .padding(14.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.horizontalGradient(buttonGradient)),
-                    contentAlignment = Alignment.Center
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(when (gameMode) {
+                        "solo" -> "🦓"
+                        "random" -> "⚡"
+                        else -> "🦁"
+                    }, fontSize = 28.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = when(gameMode) {
-                            "solo" -> "Start Solo Practice"
-                            "random" -> "Find Opponent"
-                            else -> "Create Room & Invite"
+                        text = when (gameMode) {
+                            "solo" -> "Solo mode doesn't affect ELO. Earn XP and Coins!"
+                            "random" -> "Ranked Match: Winning raises your ELO. Losing drops it."
+                            else -> "Create a room and share the invite code with your friend."
                         },
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontFamily = Fredoka, color = Color(0xFF4B5563), fontSize = 14.sp, lineHeight = 20.sp
                     )
                 }
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Category
+            Text("🗂️  Pick Category", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 12.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color.White)
+                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(18.dp))
+                    .clickable { categoryDropdownExpanded = true }
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(selectedCategory, fontFamily = Fredoka, color = Color(0xFF1E1B4B), fontSize = 16.sp)
+                    Icon(Icons.Default.KeyboardArrowDown, null, tint = Color(0xFF7C3AED))
+                }
+                DropdownMenu(
+                    expanded = categoryDropdownExpanded,
+                    onDismissRequest = { categoryDropdownExpanded = false },
+                    modifier = Modifier.background(Color.White)
+                ) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category, fontFamily = Fredoka, color = Color(0xFF1E1B4B)) },
+                            onClick = { selectedCategory = category; categoryDropdownExpanded = false }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(36.dp))
+
+            // Start button
+            val backendCategory = if (selectedCategory == "All Categories") "all" else selectedCategory
+            val btnLabel = when (gameMode) {
+                "solo" -> "🦓  Start Solo!"
+                "random" -> "⚡  Find Opponent!"
+                else -> "🦁  Create Room!"
+            }
+            val btnBrush = modeColors[gameMode] ?: Brush.linearGradient(listOf(Color.Gray, Color.DarkGray))
+
+            CartoonButton(text = btnLabel, onClick = { onNavigateToNext(gameMode, backendCategory) },
+                bgBrush = btnBrush, textColor = Color.White, borderColor = Color(0xFF1E1B4B))
+
             if (gameMode == "random") {
-                Text(
-                    text = "Estimated wait time: ~5 seconds",
-                    color = Color(0xFF6B7280),
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("⏱️ Estimated wait: ~5 seconds", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 13.sp,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             }
         }
-    }
-}
 
-@Composable
-fun RowScope.ModeCard(
-    title: String,
-    description: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor by animateColorAsState(
-        if (isSelected) activeColor else Color.White,
-        label = "color"
-    )
-    val contentColor by animateColorAsState(
-        if (isSelected) Color.White else Color(0xFF1F2937),
-        label = "contentColor"
-    )
-    val iconColor by animateColorAsState(
-        if (isSelected) Color.White else activeColor,
-        label = "iconColor"
-    )
-
-    Surface(
-        modifier = modifier
-            .aspectRatio(1f)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(32.dp),
-        color = backgroundColor,
-        border = if (isSelected) null else BorderStroke(2.dp, Color(0xFFE5E7EB)),
-        shadowElevation = if (isSelected) 8.dp else 0.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = title,
-                color = contentColor,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = description,
-                color = if (isSelected) Color.White.copy(alpha = 0.7f) else Color(0xFF6B7280),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
-        }
+        // Decorations (on top)
+        Text("🎮", fontSize = 60.sp, modifier = Modifier.offset(290.dp, 60.dp).rotate(controllerRotate))
+        Text("🕹️", fontSize = 40.sp, modifier = Modifier.offset(20.dp, 120.dp).offset(y = bounce.dp))
+        Text("⭐", fontSize = 24.sp, modifier = Modifier.offset(50.dp, 70.dp), color = Color(0xFFFBBF24))
+        Text("✨", fontSize = 18.sp, modifier = Modifier.offset(280.dp, 180.dp))
     }
 }

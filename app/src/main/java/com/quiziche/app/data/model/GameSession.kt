@@ -11,5 +11,11 @@ data class GameSession(
     val status: String = "WAITING", // WAITING, ACTIVE, COMPLETED
     val turnPlayerId: String = "",
     val startTime: Long = 0,
-    val category: String = ""
+    val category: String = "",
+    val inviteCode: String = "",
+    val player1Ready: Boolean = false,
+    val player2Ready: Boolean = false,
+    val player1Answered: Boolean = false,
+    val player2Answered: Boolean = false,
+    val currentQuestionStartTime: Long = 0
 )

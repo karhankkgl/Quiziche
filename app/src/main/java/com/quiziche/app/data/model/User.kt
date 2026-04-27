@@ -12,7 +12,8 @@ data class User(
     val topCategory: String = "None",
     val avatarIcon: String = "🎮",
     val elo: Int = 1000,
-    val categoryStats: Map<String, Int> = emptyMap() // Map of Category Name -> Win Count
+    val categoryStats: Map<String, Int> = emptyMap(), // Map of Category Name -> Win Count
+    val friends: List<String> = emptyList()
 ) {
     fun getClassName(): String {
         return when {

@@ -91,7 +91,12 @@ fun QuizicheApp() {
         }
         composable("profile") {
             ProfileScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onLogOut = {
+                    navController.navigate("login") {
+                        popUpTo("main_menu") { inclusive = true }
+                    }
+                }
             )
         }
         composable("categories") {
@@ -124,55 +129,90 @@ fun QuizicheApp() {
                 onNavigateToNext = { mode, selectedCat ->
                     if (mode == "solo") {
                         navController.navigate("game?mode=solo&category=$selectedCat")
+                    } else if (mode == "friend") {
+                        navController.navigate("friend_match/$selectedCat")
                     } else {
-                        navController.navigate("matchmaking")
+                        navController.navigate("matchmaking/$selectedCat")
                     }
                 }
             )
         }
-        composable("matchmaking") {
+        composable(
+            route = "matchmaking/{category}",
+            arguments = listOf(navArgument("category") { defaultValue = "all" })
+        ) { backStackEntry ->
+            val category = backStackEntry.arguments?.getString("category") ?: "all"
             MatchmakingScreen(
-                onNavigateToGame = { navController.navigate("game") },
+                category = category,
+                onNavigateToGame = { roomId -> 
+                    navController.navigate("game?mode=multiplayer&roomId=$roomId") 
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
         composable(
-            route = "game?mode={mode}&category={category}",
-            arguments = listOf(
-                navArgument("mode") { defaultValue = "multiplayer" },
-                navArgument("category") { defaultValue = "all" }
-            )
+            route = "friend_match/{category}",
+            arguments = listOf(navArgument("category") { defaultValue = "all" })
         ) { backStackEntry ->
-            val mode = backStackEntry.arguments?.getString("mode") ?: "multiplayer"
             val category = backStackEntry.arguments?.getString("category") ?: "all"
-            val isSingleplayer = mode == "solo"
-            GameScreen(
-                isSingleplayer = isSingleplayer,
+            FriendMatchScreen(
                 category = category,
-                onNavigateToResults = { score, totalQuestions, isWinner -> 
-                    navController.navigate("results/$score/$totalQuestions/$isSingleplayer/$isWinner/$category") 
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToGame = { roomId ->
+                    navController.navigate("game?mode=multiplayer&roomId=$roomId")
                 }
             )
         }
         composable(
-            route = "results/{score}/{totalQuestions}/{isSingleplayer}/{isWinner}/{category}",
+            route = "game?mode={mode}&category={category}&roomId={roomId}",
+            arguments = listOf(
+                navArgument("mode") { defaultValue = "multiplayer" },
+                navArgument("category") { defaultValue = "all" },
+                navArgument("roomId") { nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val mode = backStackEntry.arguments?.getString("mode") ?: "multiplayer"
+            val category = backStackEntry.arguments?.getString("category") ?: "all"
+            val roomId = backStackEntry.arguments?.getString("roomId")
+            val isSingleplayer = mode == "solo"
+            GameScreen(
+                isSingleplayer = isSingleplayer,
+                category = category,
+                roomId = roomId,
+                onNavigateToResults = { score, userNick, oppScore, oppName, total, cat, won -> 
+                    navController.navigate("results/$score/$total?userNick=$userNick&oppScore=$oppScore&oppName=$oppName&isSingleplayer=$isSingleplayer&isWinner=$won&category=$cat") 
+                }
+            )
+        }
+        composable(
+            route = "results/{score}/{totalQuestions}?userNick={userNick}&oppScore={oppScore}&oppName={oppName}&isSingleplayer={isSingleplayer}&isWinner={isWinner}&category={category}",
             arguments = listOf(
                 navArgument("score") { type = NavType.IntType },
                 navArgument("totalQuestions") { type = NavType.IntType },
-                navArgument("isSingleplayer") { type = NavType.BoolType },
-                navArgument("isWinner") { type = NavType.BoolType },
-                navArgument("category") { type = NavType.StringType }
+                navArgument("userNick") { type = NavType.StringType; defaultValue = "You" },
+                navArgument("oppScore") { type = NavType.IntType; defaultValue = 0 },
+                navArgument("oppName") { type = NavType.StringType; defaultValue = "Opponent" },
+                navArgument("isSingleplayer") { type = NavType.BoolType; defaultValue = false },
+                navArgument("isWinner") { type = NavType.BoolType; defaultValue = false },
+                navArgument("category") { type = NavType.StringType; defaultValue = "all" }
             )
         ) { backStackEntry ->
             val score = backStackEntry.arguments?.getInt("score") ?: 0
             val totalQuestions = backStackEntry.arguments?.getInt("totalQuestions") ?: 5
+            val userNick = backStackEntry.arguments?.getString("userNick") ?: "You"
+            val oppScore = backStackEntry.arguments?.getInt("oppScore") ?: 0
+            val oppName = backStackEntry.arguments?.getString("oppName") ?: "Opponent"
             val isSingleplayer = backStackEntry.arguments?.getBoolean("isSingleplayer") ?: false
             val isWinner = backStackEntry.arguments?.getBoolean("isWinner") ?: false
             val category = backStackEntry.arguments?.getString("category") ?: "all"
 
             GameResultsScreen(
                 score = score,
+                userNickname = userNick,
+                opponentScore = oppScore,
+                opponentName = oppName,
                 totalQuestions = totalQuestions,
+                category = category,
                 isSingleplayer = isSingleplayer,
                 isWinner = isWinner,
                 onNavigateToMainMenu = { navController.navigate("main_menu") {

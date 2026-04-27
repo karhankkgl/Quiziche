@@ -2,32 +2,26 @@ package com.quiziche.app.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
-
-data class Category(
-    val id: String,
-    val name: String,
-    val icon: String,
-    val colors: List<Color>
-)
 
 @Composable
 fun CategoriesScreen(
@@ -35,121 +29,104 @@ fun CategoriesScreen(
     onNavigateToCategoryDetails: (String) -> Unit
 ) {
     val categories = listOf(
-        Category("science", "Science", "🔬", listOf(Color(0xFF60A5FA), Color(0xFF06B6D4))),
-        Category("history", "History", "📚", listOf(Color(0xFFFBBF24), Color(0xFFF97316))),
-        Category("sports", "Sports", "⚽", listOf(Color(0xFF4ADE80), Color(0xFF10B981))),
-        Category("art", "Art", "🎨", listOf(Color(0xFFF472B6), Color(0xFFE11D48))),
-        Category("music", "Music", "🎵", listOf(Color(0xFFA78BFA), Color(0xFF6366F1))),
-        Category("geography", "Geography", "🌍", listOf(Color(0xFF2DD4BF), Color(0xFF0891B2))),
-        Category("movies", "Movies", "🎬", listOf(Color(0xFFF87171), Color(0xFFEC4899))),
-        Category("literature", "Literature", "📖", listOf(Color(0xFF818CF8), Color(0xFFA855F7))),
-        Category("technology", "Technology", "💻", listOf(Color(0xFF94A3B8), Color(0xFF475569))),
-        Category("food", "Food & Drink", "🍕", listOf(Color(0xFFFACC15), Color(0xFFEA580C)))
+        Triple("🚀", "Space & Science", "science"),
+        Triple("🦁", "Animals & Nature", "animals"),
+        Triple("🔭", "Astronomy", "astronomy"),
+        Triple("🧬", "Biology", "biology"),
+        Triple("🏛️", "History", "history"),
+        Triple("🎵", "Music", "music"),
+        Triple("⚽", "Sports", "sports"),
+        Triple("🎨", "Art & Culture", "art"),
+        Triple("🌍", "Geography", "geography"),
+        Triple("🎬", "Movies & TV", "movies"),
+        Triple("💻", "Technology", "technology"),
+        Triple("🍕", "Food & Drink", "food")
+    )
+    val categoryColors = listOf(
+        listOf(Color(0xFF7C3AED), Color(0xFF0EA5E9)),
+        listOf(Color(0xFFF97316), Color(0xFFFBBF24)),
+        listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6)),
+        listOf(Color(0xFF10B981), Color(0xFF0EA5E9)),
+        listOf(Color(0xFFEF4444), Color(0xFFF97316)),
+        listOf(Color(0xFFEC4899), Color(0xFF7C3AED)),
+        listOf(Color(0xFF10B981), Color(0xFFFBBF24)),
+        listOf(Color(0xFFEC4899), Color(0xFFF97316)),
+        listOf(Color(0xFF14B8A6), Color(0xFF0EA5E9)),
+        listOf(Color(0xFF7C3AED), Color(0xFFEC4899)),
+        listOf(Color(0xFF0EA5E9), Color(0xFF7C3AED)),
+        listOf(Color(0xFFF97316), Color(0xFFEC4899))
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "cat_anim")
+    val rocketY by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = -14f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "r"
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEEF2FF),
-                        Color(0xFFF5F3FF),
-                        Color(0xFFFDF2F8)
-                    )
-                )
-            )
+        modifier = Modifier.fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFEDE9FE), Color(0xFFFEF3C7))))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 20.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF1F2937)
-                    )
-                }
-                Text(
-                    text = "Categories",
-                    color = Color(0xFF1F2937),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(48.dp))
-            }
-
-            // Subtitle
-            Text(
-                text = "Choose your favorite topic to master",
-                color = Color(0xFF6B7280),
-                fontSize = 16.sp,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
-            )
-
-            // Categories Grid
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                itemsIndexed(categories) { index, category ->
-                    CategoryCard(category) {
-                        onNavigateToCategoryDetails(category.id)
+            item {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 36.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(42.dp).clip(CircleShape)
+                        .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
+                        .clickable { onNavigateBack() },
+                        contentAlignment = Alignment.Center) {
+                        Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
                     }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Text("🗂️  Categories", fontFamily = FredokaOne, fontSize = 28.sp, color = Color(0xFF1E1B4B))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Pick your battlefield! ⚔️", fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFF6B7280))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Grid-like layout using rows of 2
+            val chunked = categories.chunked(2)
+            items(chunked.size) { rowIdx ->
+                val row = chunked[rowIdx]
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEachIndexed { col, (emoji, name, id) ->
+                        val colorIdx = rowIdx * 2 + col
+                        val brush = Brush.linearGradient(categoryColors[colorIdx % categoryColors.size])
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(110.dp)
+                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(brush)
+                                .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                                .clickable { onNavigateToCategoryDetails(id) }
+                                .padding(16.dp)
+                        ) {
+                            Column {
+                                Text(emoji, fontSize = 36.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(name, fontFamily = FredokaOne, color = Color.White, fontSize = 14.sp, lineHeight = 18.sp)
+                            }
+                        }
+                    }
+                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun CategoryCard(category: Category, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(32.dp),
-        shadowElevation = 4.dp
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.linearGradient(category.colors))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White.copy(alpha = 0.1f))
-            )
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(text = category.icon, fontSize = 56.sp)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = category.name,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            item { Spacer(modifier = Modifier.height(20.dp)) }
         }
+
+        // Decorations (on top)
+        Text("🚀", fontSize = 48.sp, modifier = Modifier.offset(300.dp, 60.dp).offset(y = rocketY.dp).rotate(-25f))
+        Text("⭐", fontSize = 22.sp, modifier = Modifier.offset(20.dp, 80.dp), color = Color(0xFFFBBF24))
     }
 }

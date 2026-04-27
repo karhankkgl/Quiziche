@@ -2,6 +2,7 @@ package com.quiziche.app.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,16 +10,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +24,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
+
+data class Category(
+    val id: String,
+    val name: String,
+    val icon: String,
+    val colors: List<Color>
+)
 
 @Composable
 fun CategoryDetailsScreen(
@@ -61,11 +66,7 @@ fun CategoryDetailsScreen(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEEF2FF),
-                        Color(0xFFF5F3FF),
-                        Color(0xFFFDF2F8)
-                    )
+                    colors = listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))
                 )
             )
     ) {
@@ -77,214 +78,131 @@ fun CategoryDetailsScreen(
         ) {
             // Header
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF1F2937)
-                    )
+                Box(modifier = Modifier.size(42.dp).clip(CircleShape)
+                    .background(Color.White).border(3.dp, Color(0xFF1E1B4B), CircleShape)
+                    .clickable { onNavigateBack() },
+                    contentAlignment = Alignment.Center) {
+                    Text("←", fontSize = 20.sp, color = Color(0xFF1E1B4B))
                 }
-                Text(
-                    text = "Category Details",
-                    color = Color(0xFF1F2937),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(48.dp))
+                Spacer(modifier = Modifier.width(14.dp))
+                Text("Category Details", fontFamily = FredokaOne, fontSize = 22.sp, color = Color(0xFF1E1B4B))
             }
 
             // Category Banner
             Box(
                 modifier = Modifier
+                    .padding(horizontal = 20.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .clip(RoundedCornerShape(32.dp))
+                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp), spotColor = category.colors[0].copy(0.4f))
+                    .clip(RoundedCornerShape(28.dp))
                     .background(Brush.linearGradient(category.colors))
-                    .padding(32.dp),
+                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(28.dp))
+                    .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = category.icon, fontSize = 72.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = category.name,
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Test your knowledge in ${category.name.lowercase()} and master it!",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center
-                    )
+                    Text(category.icon, fontSize = 64.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(category.name, fontFamily = FredokaOne, color = Color.White, fontSize = 26.sp)
+                    Text("Test your ${category.name.lowercase()} knowledge!",
+                        fontFamily = Fredoka, color = Color.White.copy(0.85f), fontSize = 13.sp, textAlign = TextAlign.Center)
                 }
             }
 
             // Statistics Card
-            Surface(
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
                 modifier = Modifier
+                    .padding(horizontal = 20.dp)
                     .fillMaxWidth()
-                    .padding(24.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = Color.White,
-                shadowElevation = 2.dp
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.White)
+                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                    .padding(20.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
-                            contentDescription = null,
-                            tint = Color(0xFF9333EA)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Your Statistics",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F2937)
-                        )
+                Column {
+                    Text("📈  Your Statistics", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        CartoonStatChip("18", "Played", Brush.linearGradient(category.colors))
+                        CartoonStatChip("70%", "Win Rate", Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9))))
+                        CartoonStatChip("#12", "Rank", Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatItem(value = "18", label = "Played", color = Color(0xFF9333EA))
-                        StatItem(value = "70%", label = "Win Rate", color = Color(0xFF22C55E))
-                        StatItem(value = "#12", label = "Rank", color = Color(0xFFEAB308))
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Text("Category Mastery", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Box(modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape)
+                        .background(Color(0xFFF3F4F6))) {
+                        Box(modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight().clip(CircleShape)
+                            .background(Brush.horizontalGradient(category.colors)))
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Progress Bar
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Category Mastery",
-                                color = Color(0xFF6B7280),
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "70%",
-                                color = Color(0xFF9333EA),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF3F4F6))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.7f)
-                                    .fillMaxHeight()
-                                    .clip(CircleShape)
-                                    .background(Brush.horizontalGradient(category.colors))
-                            )
-                        }
-                    }
+                    Text("70%", fontFamily = FredokaOne, color = category.colors[0], fontSize = 13.sp,
+                        modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
                 }
             }
 
             // Leaderboard Section
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Groups,
-                        contentDescription = null,
-                        tint = Color(0xFF9333EA)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Top Players",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1F2937)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp
+            Spacer(modifier = Modifier.height(16.dp))
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                Text("🏆  Top Players", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White)
+                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
                 ) {
                     Column {
                         topPlayers.forEachIndexed { index, player ->
-                            LeaderboardRow(
-                                rank = player.first,
-                                name = player.second,
-                                score = player.third,
-                                isLast = index == topPlayers.size - 1
-                            )
+                            LeaderboardRow(rank = player.first, name = player.second, score = player.third, isLast = index == topPlayers.size - 1)
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Action Button
-            Button(
-                onClick = onNavigateToGameSettings,
+            Spacer(modifier = Modifier.height(24.dp))
+            Box(
                 modifier = Modifier
+                    .padding(horizontal = 20.dp)
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .height(64.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues(0.dp),
-                shape = RoundedCornerShape(24.dp)
+                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(22.dp), spotColor = category.colors[0].copy(0.4f))
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Brush.horizontalGradient(category.colors))
+                    .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(22.dp))
+                    .clickable { onNavigateToGameSettings() }
+                    .height(58.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Brush.horizontalGradient(category.colors)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Play in This Category",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                Text("${category.icon}  Play in ${category.name}!", fontFamily = FredokaOne,
+                    color = Color.White, fontSize = 18.sp)
             }
         }
     }
 }
 
 @Composable
+fun CartoonStatChip(value: String, label: String, brush: Brush) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.size(54.dp).clip(CircleShape).background(brush)
+            .border(2.dp, Color(0xFF1E1B4B), CircleShape), contentAlignment = Alignment.Center) {
+            Text(value, fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(label, fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 12.sp)
+    }
+}
+
+@Composable
 fun StatItem(value: String, label: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, color = color, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        Text(text = label, color = Color(0xFF6B7280), fontSize = 12.sp)
+        Text(text = value, color = color, fontFamily = FredokaOne, fontSize = 26.sp)
+        Text(text = label, color = Color(0xFF6B7280), fontFamily = Fredoka, fontSize = 12.sp)
     }
 }
 

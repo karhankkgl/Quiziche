@@ -1,28 +1,30 @@
 package com.quiziche.app.ui.screens
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.quiziche.app.data.model.GameSession
+import com.quiziche.app.data.repository.GameRepository
 import com.quiziche.app.ui.theme.*
+import kotlinx.coroutines.flow.collectLatest
 
 data class OngoingGameInfo(
     val id: Int,
@@ -37,232 +39,185 @@ data class OngoingGameInfo(
 @Composable
 fun OngoingGamesScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToGame: () -> Unit
+    onNavigateToGame: (String) -> Unit
 ) {
-    val yourTurnGames = listOf(
-        OngoingGameInfo(1, "🎯", "Alex", "Science", "3-2", "2h ago", true),
-        OngoingGameInfo(2, "🎪", "John", "Sports", "2-0", "5h ago", true),
-        OngoingGameInfo(3, "🎨", "Sarah", "Art", "4-4", "1d ago", true)
-    )
+    val gameRepository = remember { GameRepository() }
+    var activeGames by remember { mutableStateOf<List<GameSession>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    val uid = gameRepository.currentUid
 
-    val waitingGames = listOf(
-        OngoingGameInfo(4, "🎮", "Maria", "History", "1-1", "30m ago", false),
-        OngoingGameInfo(5, "🎭", "Oliver", "Music", "0-1", "1h ago", false),
-        OngoingGameInfo(6, "🎬", "Emma", "Movies", "2-3", "3h ago", false)
+    LaunchedEffect(Unit) {
+        gameRepository.getActiveGames().collectLatest { games ->
+            activeGames = games
+            isLoading = false
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "ongoing_anim")
+    val lightningScale by infiniteTransition.animateFloat(
+        initialValue = 1f, targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "l"
+    )
+    val swordRotate by infiniteTransition.animateFloat(
+        initialValue = -8f, targetValue = 8f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "s"
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFEEF2FF),
-                        Color(0xFFF5F3FF),
-                        Color(0xFFFDF2F8)
-                    )
-                )
-            )
+        modifier = Modifier.fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFEDE9FE))))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = 32.dp)
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 36.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF7C3AED), Color(0xFFF97316))))
+                    .padding(horizontal = 24.dp, vertical = 28.dp)
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF1F2937)
-                    )
-                }
-                Text(
-                    text = "Ongoing Games",
-                    color = Color(0xFF1F2937),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(48.dp))
-            }
-
-            // Your Turn Section
-            GamesSectionHeader(
-                title = "Your Turn",
-                count = yourTurnGames.size,
-                subtitle = "Make your move now!",
-                color = Color(0xFF22C55E)
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                yourTurnGames.forEach { game ->
-                    OngoingGameItem(game, onNavigateToGame)
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(42.dp).clip(CircleShape)
+                            .background(Color.White.copy(0.2f)).border(2.dp, Color.White.copy(0.4f), CircleShape)
+                            .clickable { onNavigateBack() },
+                            contentAlignment = Alignment.Center) {
+                            Text("←", fontSize = 20.sp, color = Color.White)
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Text("⚡ Active Battles", fontFamily = FredokaOne, fontSize = 26.sp, color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Your ongoing matches", fontFamily = Fredoka, fontSize = 15.sp, color = Color.White.copy(0.8f))
                 }
             }
+            
+            OngoingDecorations(lightningScale, swordRotate)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Waiting Section
-            GamesSectionHeader(
-                title = "Opponent's Turn",
-                count = waitingGames.size,
-                subtitle = "Waiting for opponent...",
-                color = Color(0xFF9CA3AF)
-            )
-            Column(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                waitingGames.forEach { game ->
-                    OngoingGameItem(game, onNavigateToGame)
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF7C3AED))
+                }
+            } else if (activeGames.isEmpty()) {
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth().offset(4.dp, 5.dp)
+                        .clip(RoundedCornerShape(24.dp)).background(Color(0xFF1E1B4B)))
+                    Box(modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp)).background(Color.White)
+                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp)).padding(36.dp),
+                        contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("⚡", fontSize = 60.sp, modifier = Modifier.scale(lightningScale))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text("No Active Battles!", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
+                            Text("Start a game to see it here", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
+                        }
+                    }
+                }
+            } else {
+                activeGames.forEach { session ->
+                    val isPlayer1 = session.player1Id == uid
+                    val scoreText = "${session.player1Score} - ${session.player2Score}"
+                    Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        CartoonOngoingGameRow(
+                            info = OngoingGameInfo(
+                                id = session.sessionId.hashCode(),
+                                opponentIcon = "🎯",
+                                name = "Opponent",
+                                category = session.category,
+                                score = scoreText,
+                                time = "🔴 Live",
+                                isYourTurn = true
+                            ),
+                            onClick = { onNavigateToGame(session.sessionId) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
     }
+}
+
+@Composable
+fun CartoonOngoingGameRow(info: OngoingGameInfo, onClick: () -> Unit) {
+    val brush = if (info.isYourTurn)
+        Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9)))
+    else
+        Brush.horizontalGradient(listOf(Color.White, Color(0xFFF9FAFB)))
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.4f))
+            .clip(RoundedCornerShape(24.dp))
+            .background(brush)
+            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+            .padding(16.dp)
+    ) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
+                        .background(Color.White.copy(if (info.isYourTurn) 0.25f else 0.8f))
+                        .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(16.dp)),
+                        contentAlignment = Alignment.Center) {
+                        Text(info.opponentIcon, fontSize = 28.sp)
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("vs ${info.name}", fontFamily = FredokaOne,
+                            color = if (info.isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 17.sp)
+                        Text(info.category, fontFamily = Fredoka,
+                            color = if (info.isYourTurn) Color.White.copy(0.8f) else Color(0xFF6B7280), fontSize = 13.sp)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(info.score, fontFamily = FredokaOne,
+                            color = if (info.isYourTurn) Color.White else Color(0xFF1E1B4B), fontSize = 20.sp)
+                        Box(modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFEF4444).copy(0.8f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                            Text(info.time, fontFamily = Fredoka, color = Color.White, fontSize = 11.sp)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (info.isYourTurn) Color.White else Color(0xFFEDE9FE))
+                    .border(2.dp, Color(0xFF1E1B4B), RoundedCornerShape(14.dp))
+                    .clickable { onClick() }
+                    .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center) {
+                    Text("⚡  Play Now!", fontFamily = FredokaOne,
+                        color = if (info.isYourTurn) Color(0xFF10B981) else Color(0xFF7C3AED), fontSize = 15.sp)
+        }
+    }
+}
+}
+
+// Decorations (on top)
+@Composable
+fun OngoingDecorations(lightningScale: Float, swordRotate: Float) {
+    Text("⚡", fontSize = 56.sp, modifier = Modifier.offset(290.dp, 80.dp).scale(lightningScale), color = Color(0xFFFBBF24))
+    Text("⚔️", fontSize = 36.sp, modifier = Modifier.offset(20.dp, 140.dp).rotate(swordRotate))
+    Text("🎮", fontSize = 28.sp, modifier = Modifier.offset(310.dp, 220.dp))
 }
 
 @Composable
 fun GamesSectionHeader(title: String, count: Int, subtitle: String, color: Color) {
-    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1F2937)
-            )
+            Text(title, fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 20.sp)
             Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(color),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = count.toString(),
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            Box(modifier = Modifier.clip(CircleShape).background(color).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                Text("$count", fontFamily = FredokaOne, color = Color.White, fontSize = 13.sp)
             }
         }
-        Text(text = subtitle, color = Color(0xFF6B7280), fontSize = 14.sp)
+        Text(subtitle, fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 13.sp)
     }
 }
 
 @Composable
-fun OngoingGameItem(game: OngoingGameInfo, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (game.isYourTurn) Modifier.clickable { onClick() } else Modifier),
-        shape = RoundedCornerShape(24.dp),
-        color = if (game.isYourTurn) Color.Transparent else Color.White,
-        border = if (game.isYourTurn) null else BorderStroke(1.dp, Color(0xFFE5E7EB)),
-        shadowElevation = if (game.isYourTurn) 4.dp else 1.dp
-    ) {
-        val backgroundModifier = if (game.isYourTurn)
-            Modifier.background(
-                Brush.horizontalGradient(listOf(Color(0xFF4ADE80), Color(0xFF10B981)))
-            )
-        else Modifier
-
-        Column(modifier = backgroundModifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (game.isYourTurn) Color.White.copy(alpha = 0.3f)
-                            else Color(0xFFF3F4F6)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = game.opponentIcon, fontSize = 32.sp)
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "vs ${game.name}",
-                        color = if (game.isYourTurn) Color.White else Color(0xFF1F2937),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = game.category,
-                        color = if (game.isYourTurn) Color.White.copy(alpha = 0.8f) else Color(0xFF6B7280),
-                        fontSize = 14.sp
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = game.score,
-                        color = if (game.isYourTurn) Color.White else Color(0xFF1F2937),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = game.time,
-                        color = if (game.isYourTurn) Color.White.copy(alpha = 0.8f) else Color(0xFF9CA3AF),
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            if (game.isYourTurn) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = onClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = Color(0xFF059669)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Play Now",
-                            color = Color(0xFF059669),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            } else {
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFF9FAFB))
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Waiting for ${game.name}...",
-                        color = Color(0xFF9CA3AF),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
-    }
-}
+fun OngoingGameItem(game: OngoingGameInfo, onClick: () -> Unit) = CartoonOngoingGameRow(game, onClick)

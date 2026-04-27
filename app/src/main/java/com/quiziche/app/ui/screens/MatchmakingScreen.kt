@@ -3,16 +3,19 @@ package com.quiziche.app.ui.screens
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -21,263 +24,185 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
-import com.quiziche.app.data.repository.GameRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun MatchmakingScreen(
-    onNavigateToGame: () -> Unit,
+    category: String = "all",
+    onNavigateToGame: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val gameRepository = remember { GameRepository() }
+    val gameRepository = remember { com.quiziche.app.data.repository.GameRepository() }
     val scope = rememberCoroutineScope()
     var isSearching by remember { mutableStateOf(true) }
+    val isConnected by gameRepository.observeConnectionState().collectAsState(initial = false)
+    val currentUid = gameRepository.currentUid ?: "Not Logged In"
 
     LaunchedEffect(Unit) {
-        gameRepository.joinMatchmaking(category = "General") { roomId ->
+        gameRepository.joinMatchmaking(category = category) { roomId ->
             isSearching = false
-            onNavigateToGame()
-        }
-        delay(3000)
-        if (isSearching) {
-            isSearching = false
-            gameRepository.cancelMatchmaking("General")
-            onNavigateToGame()
-        }
-    }
-    
-    // Cleanup on dispose (if user navigates away before match found)
-    DisposableEffect(Unit) {
-        onDispose {
-            if (isSearching) {
-                gameRepository.cancelMatchmaking("General")
-            }
+            onNavigateToGame(roomId)
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "radar")
-
-    val ring1Scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing)
-        ),
-        label = "ring1Scale"
+    val infiniteTransition = rememberInfiniteTransition(label = "mm_anim")
+    val ufoRotate by infiniteTransition.animateFloat(
+        initialValue = -8f, targetValue = 8f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse), label = "u"
     )
-    val ring1Opacity by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing)
-        ),
-        label = "ring1Opacity"
+    val ufoY by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = -16f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse), label = "uy"
     )
-
-    val ring2Scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing),
-            initialStartOffset = StartOffset(500)
-        ),
-        label = "ring2Scale"
+    val radarScale by infiniteTransition.animateFloat(
+        initialValue = 0.6f, targetValue = 2.5f,
+        animationSpec = infiniteRepeatable(tween(1500, easing = LinearEasing), RepeatMode.Restart), label = "r"
     )
-    val ring2Opacity by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing),
-            initialStartOffset = StartOffset(500)
-        ),
-        label = "ring2Opacity"
+    val radarAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(1500, easing = LinearEasing), RepeatMode.Restart), label = "ra"
+    )
+    val starRotate by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(6000, easing = LinearEasing)), label = "sr"
     )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        QuizichePurple600,
-                        QuizichePurple700,
-                        QuizicheIndigo800
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+            .background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E), Color(0xFF2D1B69))))
     ) {
-        // Cancel Button
-        IconButton(
-            onClick = { 
-                isSearching = false
-                gameRepository.cancelMatchmaking("General")
-                onNavigateBack() 
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 48.dp, end = 24.dp)
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.1f))
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Cancel",
-                tint = Color.White
-            )
+        // Star field background
+        val stars = remember { listOf(
+            Pair(40f, 80f), Pair(300f, 50f), Pair(160f, 120f),
+            Pair(60f, 250f), Pair(320f, 300f), Pair(20f, 420f),
+            Pair(250f, 160f), Pair(340f, 220f), Pair(100f, 360f)
+        )}
+        stars.forEachIndexed { i, (x, y) ->
+            Text(if (i % 2 == 0) "⭐" else "✨",
+                fontSize = (10 + (i % 3) * 4).sp,
+                modifier = Modifier.offset(x.dp, y.dp).rotate(starRotate * (if (i % 2 == 0) 1f else -0.5f)).scale(0.7f + (i % 3) * 0.2f),
+                color = Color.White.copy(0.3f + (i % 3) * 0.1f))
+        }
+
+        // Saturn-like planet decoration
+        Box(modifier = Modifier.align(Alignment.TopEnd).offset(60.dp, (-30).dp)) {
+            Box(modifier = Modifier.size(120.dp).clip(CircleShape)
+                .background(Brush.radialGradient(listOf(Color(0xFF7C3AED), Color(0xFF1A0A2E)))))
+            Box(modifier = Modifier.width(170.dp).height(30.dp).align(Alignment.Center)
+                .rotate(-20f).clip(RoundedCornerShape(50.dp))
+                .background(Color(0xFFFBBF24).copy(0.3f))
+                .border(2.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(50.dp)))
         }
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 28.dp).padding(top = 60.dp, bottom = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Radar Animation
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(240.dp)) {
-                // Rings
-                Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .scale(ring1Scale)
-                        .border(4.dp, Color.White.copy(alpha = ring1Opacity), CircleShape)
-                )
-                Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .scale(ring2Scale)
-                        .border(4.dp, Color.White.copy(alpha = ring2Opacity), CircleShape)
-                )
-
-                // Central Avatar
-                Surface(
-                    modifier = Modifier.size(160.dp),
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 16.dp
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(text = "🎮", fontSize = 72.sp)
-                    }
-                }
+            // UFO with radar rings
+            Box(contentAlignment = Alignment.Center) {
+                // Radar rings
+                Box(modifier = Modifier.size((120 * radarScale).dp).clip(CircleShape)
+                    .background(Color(0xFF7C3AED).copy(radarAlpha * 0.5f)))
+                Box(modifier = Modifier.size((80 * radarScale).dp).clip(CircleShape)
+                    .background(Color(0xFF0EA5E9).copy(radarAlpha * 0.4f)))
+                // UFO
+                Text("🛸", fontSize = 90.sp, modifier = Modifier.offset(y = ufoY.dp).rotate(ufoRotate))
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Status Text
-            val statusOpacity by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0.7f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(750),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "statusOpacity"
+            Text(
+                if (isSearching) "Scanning Galaxy..." else "Found!",
+                fontFamily = FredokaOne, fontSize = 34.sp, color = Color.White,
+                textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Category: ${category.replaceFirstChar { it.uppercase() }}",
+                fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFFC4B5FD)
+            )
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            ) {
-                Text(
-                    text = "Searching for opponent...",
-                    color = Color.White.copy(alpha = statusOpacity),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "This should only take a moment",
-                    color = QuizichePurple200,
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Progress Indicator
-            Box(
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(6.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f))
-            ) {
-                val progressOffset by infiniteTransition.animateFloat(
-                    initialValue = -1f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1500, easing = LinearEasing)
-                    ),
-                    label = "progress"
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.3f)
-                        .fillMaxHeight()
-                        .align(Alignment.CenterStart)
-                        .offset(x = 200.dp * (progressOffset + 0.5f))
-                        .clip(CircleShape)
-                        .background(Color.White)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(64.dp))
-
-            // Tip Card
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 48.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.White.copy(alpha = 0.1f))
-                    .padding(24.dp)
-            ) {
-                Row(verticalAlignment = Alignment.Top) {
-                    Text(text = "💡", fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Quick Tip",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+            if (isSearching) {
+                // Dots animation
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    repeat(3) { i ->
+                        val dotScale by infiniteTransition.animateFloat(
+                            initialValue = 0.6f, targetValue = 1.4f,
+                            animationSpec = infiniteRepeatable(tween(600, delayMillis = i * 200), RepeatMode.Reverse),
+                            label = "dot$i"
                         )
-                        Text(
-                            text = "Did you know? The category with the highest win rate is Science!",
-                            color = QuizichePurple200,
-                            fontSize = 13.sp
-                        )
+                        Box(modifier = Modifier.size(14.dp).scale(dotScale).clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899)))))
                     }
                 }
-            }
-        }
 
-        // Bouncing Dots
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 48.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            repeat(3) { i ->
-                val dotY by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = -10f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(400, easing = LinearOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse,
-                        initialStartOffset = StartOffset(i * 150)
-                    ),
-                    label = "dot$i"
-                )
+                Spacer(modifier = Modifier.height(40.dp))
+
+                // Queue stat card
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White.copy(0.08f))
+                        .border(2.dp, Color.White.copy(0.15f), RoundedCornerShape(24.dp))
+                        .padding(24.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Text("🚀  In Queue", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🌍", fontSize = 32.sp)
+                                Text("Online", fontFamily = Fredoka, color = Color(0xFFC4B5FD), fontSize = 13.sp)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("⚡", fontSize = 32.sp)
+                                Text("Live", fontFamily = Fredoka, color = Color(0xFFFBBF24), fontSize = 13.sp)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("🎯", fontSize = 32.sp)
+                                Text("Matching", fontFamily = Fredoka, color = Color(0xFF86EFAC), fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(28.dp))
+
                 Box(
                     modifier = Modifier
-                        .size(10.dp)
-                        .offset(y = dotY.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                )
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFFEF4444).copy(0.4f))
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFEF4444).copy(0.9f))
+                        .border(3.dp, Color(0xFF7F1D1D), RoundedCornerShape(18.dp))
+                        .clickable { onNavigateBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("✕  Cancel Search", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Debug overlay
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(0.4f)).padding(10.dp)
+            ) {
+                Column {
+                    Text("UID: ${currentUid.take(8)}...", color = Color.White.copy(0.7f), fontSize = 10.sp, fontFamily = Fredoka)
+                    Text(
+                        "Firebase: ${if (isConnected) "Connected ✅" else "Disconnected ❌"}",
+                        color = if (isConnected) Color(0xFF86EFAC) else Color(0xFFFCA5A5),
+                        fontSize = 10.sp, fontFamily = Fredoka
+                    )
+                }
             }
         }
     }
