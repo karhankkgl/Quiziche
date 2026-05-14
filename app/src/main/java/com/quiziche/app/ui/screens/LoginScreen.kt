@@ -57,7 +57,7 @@ fun LoginScreen(
 
     val googleSignInOptions = remember {
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("YOUR_WEB_CLIENT_ID")
+            .requestIdToken("114722338259-pg7a6cnvhhv3egg996ipveep6tevipko.apps.googleusercontent.com")
             .requestEmail().build()
     }
     val googleSignInClient = remember { GoogleSignIn.getClient(context, googleSignInOptions) }
@@ -231,7 +231,8 @@ fun LoginScreen(
                 isLoading = false,
                 bgBrush = Brush.horizontalGradient(listOf(Color.White.copy(0.15f), Color.White.copy(0.1f))),
                 textColor = Color.White,
-                borderColor = Color.White.copy(0.3f)
+                borderColor = Color.White.copy(0.3f),
+                elevation = 0.dp
             )
 
             Spacer(modifier = Modifier.height(28.dp))

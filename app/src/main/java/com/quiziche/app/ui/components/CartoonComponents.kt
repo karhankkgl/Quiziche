@@ -157,9 +157,10 @@ fun CartoonNavItem(
     label: String,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    badge: Int = 0
+    badge: Int = 0,
+    modifier: Modifier = Modifier
 ) {
-    Box(modifier = Modifier.clickable { onClick() }.padding(horizontal = 8.dp, vertical = 4.dp)) {
+    Box(modifier = modifier.clickable { onClick() }.padding(horizontal = 8.dp, vertical = 4.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
                 Box(
@@ -173,39 +174,89 @@ fun CartoonNavItem(
                     Text(emoji, fontSize = 22.sp)
                 }
                 if (badge > 0) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(4.dp, (-4).dp)
-                            .size(18.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEF4444))
-                            .border(1.dp, Color.White.copy(0.3f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) { Text(badge.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                    Box(modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-4).dp).size(16.dp).clip(CircleShape).background(Color.Red).border(1.dp, Color.White, CircleShape), contentAlignment = Alignment.Center) {
+                        Text(if (badge > 9) "9+" else badge.toString(), color = Color.White, fontSize = 9.sp, fontFamily = FredokaOne)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(label, fontFamily = Fredoka, fontSize = 11.sp,
-                color = if (isSelected) Color(0xFFC4B5FD) else Color.White.copy(0.5f), fontWeight = FontWeight.SemiBold)
+            Text(label, fontFamily = FredokaOne, color = if (isSelected) Color(0xFFFBBF24) else Color.White.copy(0.6f), fontSize = 11.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
     }
 }
 
+// Keep for legacy compatibility if needed
 @Composable
-fun BottomNavItem(
-    icon: ImageVector,
+fun CartoonNavigationItem(
     label: String,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    badgeCount: Int = 0
+    badgeCount: Int = 0,
+    modifier: Modifier = Modifier
 ) {
-    // Keep for legacy usage
     CartoonNavItem(emoji = when (label) {
         "Home" -> "🏠"
         "Categories" -> "🗂️"
         "Rankings" -> "🏆"
         "Friends" -> "🦁"
         else -> "⭐"
-    }, label = label, isSelected = isSelected, onClick = onClick, badge = badgeCount)
+    }, label = label, isSelected = isSelected, onClick = onClick, badge = badgeCount, modifier = modifier)
+}
+
+@Composable
+fun CategorySelectionDialog(
+    onDismissRequest: () -> Unit,
+    onCategorySelected: (String) -> Unit
+) {
+    val categories = listOf(
+        Triple("🔬", "Science", "science"),
+        Triple("🏛️", "History", "history"),
+        Triple("⚽", "Sports", "sports"),
+        Triple("🎨", "Art", "art"),
+        Triple("🎵", "Music", "music"),
+        Triple("🌍", "Geography", "geography"),
+        Triple("🎬", "Movies", "movies"),
+        Triple("📚", "Literature", "literature"),
+        Triple("💻", "Technology", "technology"),
+        Triple("🍕", "Food", "food"),
+        Triple("🎲", "Random Mix", "all")
+    )
+    
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        containerColor = Color(0xFF2D1B69),
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text("Select a Category", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        },
+        text = {
+            androidx.compose.foundation.lazy.LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = 300.dp)
+            ) {
+                items(categories.size) { idx ->
+                    val cat = categories[idx]
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(0.1f))
+                            .clickable { onCategorySelected(cat.third) }
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(cat.first, fontSize = 24.sp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(cat.second, fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text("Cancel", fontFamily = Fredoka, color = Color(0xFFFCA5A5))
+            }
+        }
+    )
 }

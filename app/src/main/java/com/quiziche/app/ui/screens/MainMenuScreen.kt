@@ -52,7 +52,8 @@ fun MainMenuScreen(
     onNavigateToGameSettings: () -> Unit,
     onNavigateToLeaderboard: () -> Unit,
     onNavigateToGame: (roomId: String) -> Unit,
-    onNavigateToFriends: () -> Unit
+    onNavigateToFriends: () -> Unit,
+    onNavigateToMissions: () -> Unit
 ) {
     val authRepository = remember { AuthRepository() }
     val userRepository = remember { UserRepository() }
@@ -66,6 +67,8 @@ fun MainMenuScreen(
             val result = userRepository.getUserProfile(uid)
             if (result.isSuccess) userProfile = result.getOrNull()
         }
+        gameRepository.cleanUpUserGames()
+        gameRepository.setOnlinePresence()
     }
 
     val globalMissions = listOf(
@@ -287,9 +290,10 @@ fun MainMenuScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFF7C3AED))
                         .border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(12.dp))
+                        .clickable { onNavigateToMissions() }
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Text("Daily", fontFamily = Fredoka, color = Color.White, fontSize = 13.sp)
+                    Text("See All", fontFamily = Fredoka, color = Color.White, fontSize = 13.sp)
                 }
             }
 
@@ -312,45 +316,54 @@ fun MainMenuScreen(
                 val senderName = invite["senderName"] as? String ?: "Someone"
                 val inviteId = invite["inviteId"] as? String ?: ""
                 val senderUid = invite["senderUid"] as? String ?: ""
-                val category = invite["category"] as? String ?: "General"
+                val category = invite["category"] as? String ?: "all"
                 var isAccepting by remember { mutableStateOf(false) }
+                var showCategoryDialog by remember { mutableStateOf(false) }
 
-                AlertDialog(
-                    onDismissRequest = { scope.launch { gameRepository.rejectInvite(inviteId) } },
-                    containerColor = Color(0xFF2D1B69),
-                    shape = RoundedCornerShape(28.dp),
-                    title = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                            Text("⚔️", fontSize = 48.sp)
-                            Text("Game Challenge!", fontFamily = FredokaOne, color = Color.White, fontSize = 22.sp)
+                if (showCategoryDialog) {
+                    CategorySelectionDialog(
+                        onDismissRequest = { showCategoryDialog = false },
+                        onCategorySelected = { receiverCat ->
+                            showCategoryDialog = false
+                            isAccepting = true
+                            scope.launch {
+                                val result = gameRepository.acceptInvite(inviteId, senderUid, category, receiverCat)
+                                isAccepting = false
+                                if (result.isSuccess) onNavigateToGame(result.getOrNull()!!)
+                            }
                         }
-                    },
-                    text = {
-                        Text("$senderName wants to battle you in $category! Do you accept? 🔥",
-                            fontFamily = Fredoka, color = Color(0xFFE9D5FF), fontSize = 16.sp)
-                    },
-                    confirmButton = {
-                        CartoonButton(
-                            text = if (isAccepting) "Joining..." else "⚔️ Accept!",
-                            onClick = {
-                                isAccepting = true
-                                scope.launch {
-                                    val result = gameRepository.acceptInvite(inviteId, senderUid, category)
-                                    isAccepting = false
-                                    if (result.isSuccess) onNavigateToGame(result.getOrNull()!!)
-                                }
-                            },
-                            isLoading = isAccepting,
-                            bgBrush = Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFFFBBF24))),
-                            textColor = Color(0xFF475569)
-                        )
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { scope.launch { gameRepository.rejectInvite(inviteId) } }) {
-                            Text("Decline 😢", fontFamily = Fredoka, color = Color(0xFFFCA5A5))
+                    )
+                } else {
+                    AlertDialog(
+                        onDismissRequest = { scope.launch { gameRepository.rejectInvite(inviteId) } },
+                        containerColor = Color(0xFF2D1B69),
+                        shape = RoundedCornerShape(28.dp),
+                        title = {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                                Text("⚔️", fontSize = 48.sp)
+                                Text("Game Challenge!", fontFamily = FredokaOne, color = Color.White, fontSize = 22.sp)
+                            }
+                        },
+                        text = {
+                            Text("$senderName wants to battle you in ${category.replaceFirstChar { it.uppercase() }}! Pick your category to accept 🔥",
+                                fontFamily = Fredoka, color = Color(0xFFE9D5FF), fontSize = 16.sp)
+                        },
+                        confirmButton = {
+                            CartoonButton(
+                                text = if (isAccepting) "Joining..." else "⚔️ Accept!",
+                                onClick = { showCategoryDialog = true },
+                                isLoading = isAccepting,
+                                bgBrush = Brush.horizontalGradient(listOf(Color(0xFF10B981), Color(0xFFFBBF24))),
+                                textColor = Color(0xFF475569)
+                            )
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { scope.launch { gameRepository.rejectInvite(inviteId) } }) {
+                                Text("Decline 😢", fontFamily = Fredoka, color = Color(0xFFFCA5A5))
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
 
@@ -365,10 +378,10 @@ fun MainMenuScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = true, onClick = {})
-                CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories)
-                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
-                CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends)
+                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = true, onClick = {}, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends, modifier = Modifier.weight(1f))
             }
         }
 

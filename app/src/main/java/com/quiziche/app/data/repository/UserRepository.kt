@@ -42,9 +42,11 @@ class UserRepository {
                 val newLevel = (newXp / 1000) + 1
                 
                 var newElo = user.elo
+                var newWeeklyElo = user.weeklyElo
                 if (!isSingleplayer) {
                     val eloChange = if (won) 15 else -10
                     newElo = (user.elo + eloChange).coerceAtLeast(0)
+                    newWeeklyElo = (user.weeklyElo + eloChange).coerceAtLeast(0)
                 }
 
                 val newCategoryStats = user.categoryStats.toMutableMap()
@@ -65,6 +67,7 @@ class UserRepository {
                     "coins" to newCoins,
                     "level" to newLevel,
                     "elo" to newElo,
+                    "weeklyElo" to newWeeklyElo,
                     "categoryStats" to newCategoryStats,
                     "topCategory" to topCategory
                 ))
@@ -99,10 +102,11 @@ class UserRepository {
         }
     }
 
-    suspend fun getLeaderboard(limitCount: Long = 50): Result<List<User>> {
+    suspend fun getLeaderboard(limitCount: Long = 50, isWeekly: Boolean = false): Result<List<User>> {
         return try {
+            val field = if (isWeekly) "weeklyElo" else "elo"
             val snapshot = usersCollection
-                .orderBy("elo", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .orderBy(field, com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .limit(limitCount)
                 .get()
                 .await()
@@ -110,6 +114,178 @@ class UserRepository {
             Result.success(users)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun getCategoryLeaderboard(categoryId: String, limitCount: Long = 5): Result<List<User>> {
+        return try {
+            val snapshot = usersCollection
+                .orderBy("categoryStats.$categoryId", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .limit(limitCount)
+                .get()
+                .await()
+            val users = snapshot.toObjects(User::class.java).filter { (it.categoryStats[categoryId] ?: 0) > 0 }
+            Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchUsersByUsername(query: String): Result<List<User>> {
+        return try {
+            if (query.isBlank()) return Result.success(emptyList())
+            // Note: Firestore doesn't support 'contains' queries natively.
+            // Using a simple prefix match or fetching a subset and filtering in memory.
+            val snapshot = usersCollection.get().await()
+            val users = snapshot.toObjects(User::class.java)
+            val filtered = users.filter { it.name.contains(query, ignoreCase = true) }
+            Result.success(filtered)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendFriendRequest(currentUid: String, targetUid: String): Result<Unit> {
+        return try {
+            firestore.runTransaction { transaction ->
+                val currentUserRef = usersCollection.document(currentUid)
+                val targetUserRef = usersCollection.document(targetUid)
+                
+                val currentUserSnapshot = transaction.get(currentUserRef)
+                val targetUserSnapshot = transaction.get(targetUserRef)
+                
+                val currentUser = currentUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                val targetUser = targetUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                
+                if (!targetUser.friendRequests.contains(currentUid)) {
+                    val newRequests = targetUser.friendRequests + currentUid
+                    transaction.update(targetUserRef, "friendRequests", newRequests)
+                }
+                if (!currentUser.sentFriendRequests.contains(targetUid)) {
+                    val newSent = currentUser.sentFriendRequests + targetUid
+                    transaction.update(currentUserRef, "sentFriendRequests", newSent)
+                }
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun acceptFriendRequest(currentUid: String, targetUid: String): Result<Unit> {
+        return try {
+            firestore.runTransaction { transaction ->
+                val currentUserRef = usersCollection.document(currentUid)
+                val targetUserRef = usersCollection.document(targetUid)
+                
+                val currentUserSnapshot = transaction.get(currentUserRef)
+                val targetUserSnapshot = transaction.get(targetUserRef)
+                
+                val currentUser = currentUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                val targetUser = targetUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                
+                val newFriendsCurrent = (currentUser.friends + targetUid).distinct()
+                val newRequestsCurrent = currentUser.friendRequests - targetUid
+                
+                val newFriendsTarget = (targetUser.friends + currentUid).distinct()
+                val newSentTarget = targetUser.sentFriendRequests - currentUid
+                
+                transaction.update(currentUserRef, mapOf("friends" to newFriendsCurrent, "friendRequests" to newRequestsCurrent))
+                transaction.update(targetUserRef, mapOf("friends" to newFriendsTarget, "sentFriendRequests" to newSentTarget))
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun rejectFriendRequest(currentUid: String, targetUid: String): Result<Unit> {
+        return try {
+            firestore.runTransaction { transaction ->
+                val currentUserRef = usersCollection.document(currentUid)
+                val targetUserRef = usersCollection.document(targetUid)
+                
+                val currentUserSnapshot = transaction.get(currentUserRef)
+                val targetUserSnapshot = transaction.get(targetUserRef)
+                
+                val currentUser = currentUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                val targetUser = targetUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                
+                val newRequestsCurrent = currentUser.friendRequests - targetUid
+                val newSentTarget = targetUser.sentFriendRequests - currentUid
+                
+                transaction.update(currentUserRef, "friendRequests", newRequestsCurrent)
+                transaction.update(targetUserRef, "sentFriendRequests", newSentTarget)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun removeFriend(currentUid: String, targetUid: String): Result<Unit> {
+        return try {
+            firestore.runTransaction { transaction ->
+                val currentUserRef = usersCollection.document(currentUid)
+                val targetUserRef = usersCollection.document(targetUid)
+                
+                val currentUserSnapshot = transaction.get(currentUserRef)
+                val targetUserSnapshot = transaction.get(targetUserRef)
+                
+                val currentUser = currentUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                val targetUser = targetUserSnapshot.toObject(User::class.java) ?: return@runTransaction
+                
+                val newFriendsCurrent = currentUser.friends - targetUid
+                val newFriendsTarget = targetUser.friends - currentUid
+                
+                transaction.update(currentUserRef, "friends", newFriendsCurrent)
+                transaction.update(targetUserRef, "friends", newFriendsTarget)
+            }.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun seedRandomUsers() {
+        val avatars = listOf("🎮", "🦁", "🐧", "🦖", "🦄", "🐼", "🤖", "🦊", "🐶", "🐱")
+        val names = listOf("QuizMaster", "BrainBox", "ScienceGuru", "EinsteinJr", "NerdAlert", "TriviaKing", "FactMachine", "SmartyPants", "KnowledgeBase", "Thinker", "Genius", "Scholar", "Professor", "WhizKid", "Savant", "Brainiac", "Intellect", "Sage", "Oracle", "Guru")
+        val categories = listOf("science", "history", "sports", "art", "music", "geography", "movies", "literature", "technology", "food")
+        
+        for (i in 1..25) {
+            val uid = java.util.UUID.randomUUID().toString()
+            val elo = (800..2500).random()
+            val weeklyElo = (800..1800).random()
+            val xp = (100..50000).random()
+            val coins = (0..5000).random()
+            val winCount = (0..500).random()
+            val totalGames = winCount + (0..200).random()
+            val topCategory = categories.random()
+            
+            val catStats = mutableMapOf<String, Int>()
+            for (c in categories.shuffled().take(3)) {
+                catStats[c] = (1..100).random()
+            }
+            
+            val user = User(
+                uid = uid,
+                name = names.random() + (1..99).random(),
+                email = "user$i@quiziche.test",
+                level = (xp / 1000) + 1,
+                xp = xp,
+                coins = coins,
+                winCount = winCount,
+                totalGames = totalGames,
+                topCategory = topCategory,
+                avatarIcon = avatars.random(),
+                elo = elo,
+                weeklyElo = weeklyElo,
+                categoryStats = catStats,
+                friends = emptyList(),
+                friendRequests = emptyList(),
+                sentFriendRequests = emptyList()
+            )
+            usersCollection.document(uid).set(user).await()
         }
     }
 }

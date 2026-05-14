@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.ui.theme.*
 import com.quiziche.app.ui.components.*
+import com.quiziche.app.data.model.User
+import com.quiziche.app.data.repository.AuthRepository
+import com.quiziche.app.data.repository.UserRepository
+import kotlinx.coroutines.launch
 
 data class Category(
     val id: String,
@@ -54,13 +58,36 @@ fun CategoryDetailsScreen(
 
     val category = categoryData[categoryId] ?: categoryData["science"]!!
 
-    val topPlayers = listOf(
-        Triple(1, "QuizMaster", 2450),
-        Triple(2, "BrainBox", 2380),
-        Triple(3, "ScienceGuru", 2310),
-        Triple(4, "Einstein Jr", 2250),
-        Triple(5, "NerdAlert", 2190)
-    )
+    val userRepository = remember { UserRepository() }
+    val authRepository = remember { AuthRepository() }
+    val scope = rememberCoroutineScope()
+
+    var currentUser by remember { mutableStateOf<User?>(null) }
+    var topPlayers by remember { mutableStateOf<List<User>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    val backendCategory = categoryId.replaceFirstChar { it.uppercase() }
+
+    LaunchedEffect(categoryId) {
+        val uid = authRepository.currentUserUID
+        if (uid != null) {
+            val userResult = userRepository.getUserProfile(uid)
+            if (userResult.isSuccess) {
+                currentUser = userResult.getOrNull()
+            }
+        }
+        val leaderboardResult = userRepository.getCategoryLeaderboard(backendCategory, 5)
+        if (leaderboardResult.isSuccess) {
+            topPlayers = leaderboardResult.getOrDefault(emptyList())
+        }
+        isLoading = false
+    }
+
+    val played = currentUser?.categoryStats?.get(backendCategory) ?: 0
+    val totalPlayed = currentUser?.totalGames ?: 1
+    val winRate = if (totalPlayed > 0) ((played.toFloat() / totalPlayed) * 100).toInt() else 0
+    val rankIndex = topPlayers.indexOfFirst { it.uid == currentUser?.uid }
+    val rankText = if (rankIndex != -1) "#${rankIndex + 1}" else "Unranked"
 
     Box(
         modifier = Modifier
@@ -120,19 +147,19 @@ fun CategoryDetailsScreen(
                     Text("📈  Your Statistics", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(18.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        CartoonStatChip("18", "Played", Brush.linearGradient(category.colors))
-                        CartoonStatChip("70%", "Win Rate", Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9))))
-                        CartoonStatChip("#12", "Rank", Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
+                        CartoonStatChip(played.toString(), "Played", Brush.linearGradient(category.colors))
+                        CartoonStatChip("$winRate%", "Win Rate", Brush.linearGradient(listOf(Color(0xFF10B981), Color(0xFF0EA5E9))))
+                        CartoonStatChip(rankText, "Rank", Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
                     }
                     Spacer(modifier = Modifier.height(18.dp))
                     Text("Category Mastery", fontFamily = Fredoka, color = Color(0xFF6B7280), fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(6.dp))
                     Box(modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape)
                         .background(Color(0xFFF3F4F6))) {
-                        Box(modifier = Modifier.fillMaxWidth(0.7f).fillMaxHeight().clip(CircleShape)
+                        Box(modifier = Modifier.fillMaxWidth(winRate / 100f).fillMaxHeight().clip(CircleShape)
                             .background(Brush.horizontalGradient(category.colors)))
                     }
-                    Text("70%", fontFamily = FredokaOne, color = category.colors[0], fontSize = 13.sp,
+                    Text("$winRate%", fontFamily = FredokaOne, color = category.colors[0], fontSize = 13.sp,
                         modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
                 }
             }
@@ -142,17 +169,27 @@ fun CategoryDetailsScreen(
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
                 Text("🏆  Top Players", fontFamily = FredokaOne, color = Color(0xFF1E1B4B), fontSize = 18.sp)
                 Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(Color.White)
-                        .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
-                ) {
-                    Column {
-                        topPlayers.forEachIndexed { index, player ->
-                            LeaderboardRow(rank = player.first, name = player.second, score = player.third, isLast = index == topPlayers.size - 1)
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = category.colors[0])
+                    }
+                } else if (topPlayers.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text("No players ranked yet!", fontFamily = Fredoka, color = Color.White)
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF1E1B4B).copy(0.3f))
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White)
+                            .border(3.dp, Color(0xFF1E1B4B), RoundedCornerShape(24.dp))
+                    ) {
+                        Column {
+                            topPlayers.forEachIndexed { index, player ->
+                                LeaderboardRow(rank = index + 1, name = player.name, score = player.categoryStats[categoryId] ?: 0, isLast = index == topPlayers.size - 1)
+                            }
                         }
                     }
                 }

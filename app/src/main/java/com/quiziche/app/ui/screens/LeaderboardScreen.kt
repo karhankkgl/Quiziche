@@ -37,11 +37,13 @@ fun LeaderboardScreen(
     val gameRepository = remember { GameRepository() }
     val scope = rememberCoroutineScope()
     var leaderboard by remember { mutableStateOf<List<User>>(emptyList()) }
+    var isWeekly by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
     var inviteSentTo by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        val result = userRepository.getLeaderboard(50)
+    LaunchedEffect(isWeekly) {
+        isLoading = true
+        val result = userRepository.getLeaderboard(50, isWeekly)
         if (result.isSuccess) leaderboard = result.getOrDefault(emptyList())
         isLoading = false
     }
@@ -77,8 +79,24 @@ fun LeaderboardScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("🏆", fontSize = 80.sp, modifier = Modifier.scale(trophyScale))
-                        Text("Global Rankings", fontFamily = FredokaOne, fontSize = 30.sp, color = Color(0xFF78350F))
-                        Text("Who's the Quiz Champion? 👑", fontFamily = Fredoka, fontSize = 15.sp, color = Color(0xFF78350F).copy(0.8f))
+                        Text(if (isWeekly) "Weekly Rankings" else "Global Rankings", fontFamily = FredokaOne, fontSize = 30.sp, color = Color(0xFF78350F))
+                        Text(if (isWeekly) "This week's top players! 👑" else "Who's the Quiz Champion? 👑", fontFamily = Fredoka, fontSize = 15.sp, color = Color(0xFF78350F).copy(0.8f))
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White.copy(0.2f)).border(1.5.dp, Color.White.copy(0.3f), RoundedCornerShape(20.dp))) {
+                            Box(modifier = Modifier.clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp))
+                                .background(if (!isWeekly) Color.White.copy(0.4f) else Color.Transparent)
+                                .clickable { isWeekly = false }
+                                .padding(horizontal = 24.dp, vertical = 8.dp)) {
+                                Text("Global", fontFamily = FredokaOne, color = Color(0xFF78350F), fontSize = 14.sp)
+                            }
+                            Box(modifier = Modifier.clip(RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp))
+                                .background(if (isWeekly) Color.White.copy(0.4f) else Color.Transparent)
+                                .clickable { isWeekly = true }
+                                .padding(horizontal = 24.dp, vertical = 8.dp)) {
+                                Text("Weekly", fontFamily = FredokaOne, color = Color(0xFF78350F), fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -145,7 +163,7 @@ fun LeaderboardScreen(
                                     Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
                                         .background(Color(0xFFFBBF24)).border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(10.dp))
                                         .padding(horizontal = 8.dp, vertical = 2.dp)) {
-                                        Text("⚡ ${user.elo}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color(0xFF78350F))
+                                        Text("⚡ ${if (isWeekly) user.weeklyElo else user.elo}", fontFamily = FredokaOne, fontSize = 13.sp, color = Color(0xFF78350F))
                                     }
                                     if (!isCurrentUser) {
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -199,7 +217,8 @@ fun PodiumCard(user: User, rank: Int, height: androidx.compose.ui.unit.Dp, modif
             .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
             .background(brush).border(1.5.dp, Color.White.copy(0.2f), RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)),
             contentAlignment = Alignment.Center) {
-            Text("${user.elo}", fontFamily = FredokaOne, fontSize = 14.sp, color = Color.White)
+            // we will just show elo here as it is not easily passable unless we modify PodiumCard signature
+            Text("⚡", fontFamily = FredokaOne, fontSize = 14.sp, color = Color.White)
         }
     }
 }

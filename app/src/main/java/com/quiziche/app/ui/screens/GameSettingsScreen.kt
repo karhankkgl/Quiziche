@@ -30,13 +30,17 @@ import com.quiziche.app.ui.components.*
 @Composable
 fun GameSettingsScreen(
     initialCategory: String = "all",
+    initialMode: String = "random",
     onNavigateBack: () -> Unit,
-    onNavigateToNext: (mode: String, category: String) -> Unit
+    onNavigateToNext: (mode: String, category: String, difficulty: String) -> Unit
 ) {
-    var gameMode by remember { mutableStateOf("random") }
+    var gameMode by remember { mutableStateOf(initialMode) }
     var selectedCategory by remember { mutableStateOf(if (initialCategory == "all") "All Categories" else initialCategory.replaceFirstChar { it.uppercase() }) }
+    var selectedDifficulty by remember { mutableStateOf("Medium") }
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
+    var difficultyDropdownExpanded by remember { mutableStateOf(false) }
     val categories = listOf("All Categories", "Science", "History", "Sports", "Art", "Music", "Geography", "Movies", "Literature", "Technology", "Food")
+    val difficulties = listOf("Any", "Easy", "Medium", "Hard")
 
     val infiniteTransition = rememberInfiniteTransition(label = "settings_anim")
     val controllerRotate by infiniteTransition.animateFloat(
@@ -153,35 +157,91 @@ fun GameSettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Category
-            Text("🗂️  Pick Category", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp,
-                modifier = Modifier.padding(bottom = 12.dp))
+            if (gameMode != "friend") {
+                // Category
+                Text("🗂️  Pick Category", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp,
+                    modifier = Modifier.padding(bottom = 12.dp))
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color.Black.copy(0.6f))
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF1E293B))
-                    .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(18.dp))
-                    .clickable { categoryDropdownExpanded = true }
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(selectedCategory, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp)
-                    Icon(Icons.Default.KeyboardArrowDown, null, tint = Color(0xFF7C3AED))
-                }
-                DropdownMenu(
-                    expanded = categoryDropdownExpanded,
-                    onDismissRequest = { categoryDropdownExpanded = false },
-                    modifier = Modifier.background(Color.White)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color.Black.copy(0.6f))
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFF1E293B))
+                        .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(18.dp))
+                        .clickable { categoryDropdownExpanded = true }
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category, fontFamily = Fredoka, color = Color(0xFF475569)) },
-                            onClick = { selectedCategory = category; categoryDropdownExpanded = false }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(selectedCategory, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp)
+                        Icon(Icons.Default.KeyboardArrowDown, null, tint = Color(0xFF7C3AED))
+                    }
+                    DropdownMenu(
+                        expanded = categoryDropdownExpanded,
+                        onDismissRequest = { categoryDropdownExpanded = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category, fontFamily = Fredoka, color = Color(0xFF475569)) },
+                                onClick = { selectedCategory = category; categoryDropdownExpanded = false }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Difficulty
+                Text("📈  Select Difficulty", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp,
+                    modifier = Modifier.padding(bottom = 12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(18.dp), spotColor = Color.Black.copy(0.6f))
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFF1E293B))
+                        .border(1.5.dp, Color.White.copy(0.15f), RoundedCornerShape(18.dp))
+                        .clickable { difficultyDropdownExpanded = true }
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(selectedDifficulty, fontFamily = Fredoka, color = Color.White, fontSize = 16.sp)
+                        Icon(Icons.Default.KeyboardArrowDown, null, tint = Color(0xFF7C3AED))
+                    }
+                    DropdownMenu(
+                        expanded = difficultyDropdownExpanded,
+                        onDismissRequest = { difficultyDropdownExpanded = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        difficulties.forEach { difficulty ->
+                            DropdownMenuItem(
+                                text = { Text(difficulty, fontFamily = Fredoka, color = Color(0xFF475569)) },
+                                onClick = { selectedDifficulty = difficulty; difficultyDropdownExpanded = false }
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Friend mode hint card
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFF97316).copy(0.15f))
+                        .border(1.5.dp, Color(0xFFF97316).copy(0.4f), RoundedCornerShape(18.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🦁", fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "You'll pick the category when creating your room on the next screen.",
+                            fontFamily = Fredoka, color = Color.White.copy(0.85f), fontSize = 14.sp, lineHeight = 20.sp
                         )
                     }
                 }
@@ -194,11 +254,11 @@ fun GameSettingsScreen(
             val btnLabel = when (gameMode) {
                 "solo" -> "🦓  Start Solo!"
                 "random" -> "⚡  Find Opponent!"
-                else -> "🦁  Create Room!"
+                else -> "🦁  Play with a Friend!"
             }
             val btnBrush = modeColors[gameMode] ?: Brush.linearGradient(listOf(Color.Gray, Color.DarkGray))
 
-            CartoonButton(text = btnLabel, onClick = { onNavigateToNext(gameMode, backendCategory) },
+            CartoonButton(text = btnLabel, onClick = { onNavigateToNext(gameMode, backendCategory, selectedDifficulty) },
                 bgBrush = btnBrush, textColor = Color.White, borderColor = Color(0xFF475569))
 
             if (gameMode == "random") {

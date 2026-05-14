@@ -47,7 +47,7 @@ fun OngoingGamesScreen(
     val uid = gameRepository.currentUid
 
     LaunchedEffect(Unit) {
-        gameRepository.getActiveGames().collectLatest { games ->
+        gameRepository.getActiveGames().collectLatest { games: List<GameSession> ->
             activeGames = games
             isLoading = false
         }

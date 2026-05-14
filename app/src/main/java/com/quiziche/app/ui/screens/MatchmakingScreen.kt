@@ -28,6 +28,7 @@ import com.quiziche.app.ui.theme.*
 @Composable
 fun MatchmakingScreen(
     category: String = "all",
+    difficulty: String = "Any",
     onNavigateToGame: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -38,7 +39,7 @@ fun MatchmakingScreen(
     val currentUid = gameRepository.currentUid ?: "Not Logged In"
 
     LaunchedEffect(Unit) {
-        gameRepository.joinMatchmaking(category = category) { roomId ->
+        gameRepository.joinMatchmaking(category = category, difficulty = difficulty) { roomId ->
             isSearching = false
             onNavigateToGame(roomId)
         }
@@ -119,8 +120,8 @@ fun MatchmakingScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Category: ${category.replaceFirstChar { it.uppercase() }}",
-                fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFFC4B5FD)
+                "Category: ${category.replaceFirstChar { it.uppercase() }}\nDifficulty: $difficulty",
+                fontFamily = Fredoka, fontSize = 16.sp, color = Color(0xFFC4B5FD), textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -171,21 +172,7 @@ fun MatchmakingScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFFEF4444).copy(0.4f))
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color(0xFFEF4444).copy(0.9f))
-                        .border(3.dp, Color(0xFF7F1D1D), RoundedCornerShape(18.dp))
-                        .clickable { onNavigateBack() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("✕  Cancel Search", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
-                }
+                Spacer(modifier = Modifier.height(80.dp)) // padding for the fixed button at the bottom
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -203,6 +190,25 @@ fun MatchmakingScreen(
                         fontSize = 10.sp, fontFamily = Fredoka
                     )
                 }
+            }
+        }
+
+        // Fixed Cancel button
+        if (isSearching) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 28.dp, vertical = 24.dp)
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFFEF4444).copy(0.4f))
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xFFEF4444).copy(0.9f))
+                    .border(3.dp, Color(0xFF7F1D1D), RoundedCornerShape(18.dp))
+                    .clickable { onNavigateBack() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✕  Cancel Search", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
             }
         }
     }

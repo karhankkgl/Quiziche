@@ -44,8 +44,9 @@ import kotlinx.coroutines.delay
 fun GameScreen(
     isSingleplayer: Boolean = false,
     category: String = "all",
+    difficulty: String = "Any",
     roomId: String? = null,
-    onNavigateToResults: (score: Int, userNickname: String, opponentScore: Int, opponentName: String, totalQuestions: Int, category: String, isWinner: Boolean) -> Unit
+    onNavigateToResults: (score: Int, userNickname: String, opponentScore: Int, opponentName: String, totalQuestions: Int, category: String, isWinner: Boolean, correctAnswers: Int) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val quizRepository = remember { QuizRepository() }
@@ -57,21 +58,40 @@ fun GameScreen(
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var userScore by remember { mutableStateOf(0) }
+    var correctAnswers by remember { mutableStateOf(0) }
     
     var opponentScore by remember { mutableStateOf(0) }
     var userNickname by remember { mutableStateOf("You") }
-    var opponentName by remember { mutableStateOf(if (isSingleplayer) "Solo Bot" else "Opponent") }
+    var opponentName by remember { mutableStateOf(if (isSingleplayer) "Solo" else "Opponent") }
     var isPlayer1 by remember { mutableStateOf(true) }
 
     var isGameStarted by remember { mutableStateOf(false) }
+    var isCountingDown by remember { mutableStateOf(false) }
+    var preGameCountdown by remember { mutableStateOf(3) }
+    
     var player1Ready by remember { mutableStateOf(false) }
     var player2Ready by remember { mutableStateOf(false) }
     var player1Answered by remember { mutableStateOf(false) }
     var player2Answered by remember { mutableStateOf(false) }
     var showSyncResult by remember { mutableStateOf(false) }
-    var timeLeft by remember { mutableStateOf(15) }
+    val animatedProgress = remember { Animatable(1f) }
     var showExitDialog by remember { mutableStateOf(false) }
     var selectedAnswer by remember { mutableStateOf<Int?>(null) }
+    var connectionTimeout by remember { mutableStateOf(15) }
+
+    LaunchedEffect(isGameStarted, isCountingDown, player1Ready, player2Ready) {
+        if (!isSingleplayer && roomId != null && !isGameStarted && !isCountingDown) {
+            while (connectionTimeout > 0 && !(player1Ready && player2Ready)) {
+                kotlinx.coroutines.delay(1000)
+                connectionTimeout--
+            }
+            if (connectionTimeout == 0 && !(player1Ready && player2Ready)) {
+                // Opponent failed to connect (Ghost match)
+                gameRepository.completeGame(roomId)
+                onNavigateToResults(userScore, userNickname, 0, "Ghost", questions.size, category, true, correctAnswers)
+            }
+        }
+    }
 
     fun finalizeGame() {
         scope.launch {
@@ -82,10 +102,10 @@ fun GameScreen(
                 userRepository.updateStats(uid, won, displayCategory, xpEarned = userScore * 10, coinsEarned = userScore * 5, isSingleplayer = isSingleplayer)
                 
                 val matchData = mapOf(
-                    "opponentIcon" to if (isSingleplayer) "🤖" else "🎯",
+                    "opponentIcon" to if (isSingleplayer) "🦓" else "🎯",
                     "opponentName" to opponentName,
                     "result" to if (won) "won" else "lost",
-                    "score" to "$userScore - $opponentScore",
+                    "score" to if (isSingleplayer) "$correctAnswers/${questions.size}" else "$userScore - $opponentScore",
                     "category" to displayCategory,
                     "timestamp" to System.currentTimeMillis()
                 )
@@ -95,7 +115,7 @@ fun GameScreen(
                     gameRepository.completeGame(roomId)
                 }
                 
-                onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, won)
+                onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, won, correctAnswers)
             }
         }
     }
@@ -106,7 +126,6 @@ fun GameScreen(
                 currentQuestionIndex++
                 selectedAnswer = null
                 showSyncResult = false
-                timeLeft = 15
             } else {
                 finalizeGame()
             }
@@ -129,7 +148,7 @@ fun GameScreen(
                 if (!isSingleplayer && roomId != null) {
                     gameRepository.completeGame(roomId)
                 }
-                onNavigateToResults(userScore, userNickname, 0, opponentName, questions.size, category, false)
+                onNavigateToResults(userScore, userNickname, 0, opponentName, questions.size, category, false, correctAnswers)
             }
         }
     }
@@ -167,18 +186,14 @@ fun GameScreen(
                     player1Answered = session.player1Answered
                     player2Answered = session.player2Answered
                     
-                    if (!isGameStarted && player1Ready && player2Ready) {
-                        isGameStarted = true
-                        if (isPlayer1 && session.currentQuestionStartTime == 0L) {
-                            gameRepository.syncNextQuestion(roomId, 0)
-                        }
+                    if (!isGameStarted && !isCountingDown && player1Ready && player2Ready) {
+                        isCountingDown = true
                     }
 
                     if (currentQuestionIndex != session.currentQuestionIndex) {
                         currentQuestionIndex = session.currentQuestionIndex
                         selectedAnswer = null
                         showSyncResult = false
-                        timeLeft = 15
                     }
 
                     if (isPlayer1 && isGameStarted && session.player1Answered && session.player2Answered && !showSyncResult) {
@@ -191,14 +206,19 @@ fun GameScreen(
                         showSyncResult = true
                     }
 
+                    if (session.status == "ABANDONED" && !isLoading) {
+                        onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, true, correctAnswers)
+                        return@collectLatest
+                    }
+
                     if (session.status == "COMPLETED" && !isLoading) {
                         // Game was ended by surrender or error
-                        onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, userScore >= opponentScore)
+                        onNavigateToResults(userScore, userNickname, opponentScore, opponentName, questions.size, category, userScore >= opponentScore, correctAnswers)
                         return@collectLatest
                     }
 
                     if (questions.isEmpty() && session.questionIds.isNotEmpty()) {
-                        val result = quizRepository.getQuestionsByCategory(category, 5)
+                        val result = quizRepository.getQuestionsByIds(session.questionIds)
                         if (result.isSuccess) {
                             questions = result.getOrDefault(emptyList())
                         }
@@ -212,23 +232,48 @@ fun GameScreen(
 
     LaunchedEffect(Unit) {
         if (isSingleplayer || roomId == null) {
-            val result = quizRepository.getQuestionsByCategory(category, 5)
-            if (result.isSuccess) {
-                questions = result.getOrDefault(emptyList()).shuffled().take(5)
+            var result = quizRepository.getQuestionsByCategory(category, 5, difficulty)
+            var loaded = result.getOrDefault(emptyList()).shuffled().take(5)
+            if (loaded.isEmpty() && difficulty != "Any") {
+                // Fallback 1: relax difficulty filter
+                result = quizRepository.getQuestionsByCategory(category, 5, "Any")
+                loaded = result.getOrDefault(emptyList()).shuffled().take(5)
             }
+            if (loaded.isEmpty()) {
+                // Fallback 2: all categories
+                result = quizRepository.getQuestionsByCategory("all", 5, "Any")
+                loaded = result.getOrDefault(emptyList()).shuffled().take(5)
+            }
+            questions = loaded
             isLoading = false
-            isGameStarted = true
+            isCountingDown = true
         }
     }
 
     val currentQuestion = questions.getOrNull(currentQuestionIndex)
 
-    LaunchedEffect(timeLeft, isLoading, isGameStarted) {
-        if (!isLoading && isGameStarted && currentQuestion != null) {
-            if (timeLeft > 0 && selectedAnswer == null) {
+    LaunchedEffect(isCountingDown) {
+        if (isCountingDown) {
+            while (preGameCountdown > 0) {
                 delay(1000)
-                timeLeft -= 1
-            } else if (timeLeft == 0 && selectedAnswer == null) {
+                preGameCountdown--
+            }
+            isGameStarted = true
+            isCountingDown = false
+            if (!isSingleplayer && roomId != null && isPlayer1 && questions.isNotEmpty()) {
+                gameRepository.syncNextQuestion(roomId, 0)
+            }
+        }
+    }
+
+    LaunchedEffect(currentQuestionIndex, isGameStarted) {
+        if (isGameStarted && currentQuestion != null) {
+            animatedProgress.snapTo(1f)
+            val result = animatedProgress.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = 15000, easing = LinearEasing)
+            )
+            if (result.endReason == AnimationEndReason.Finished && selectedAnswer == null) {
                 if (isSingleplayer) {
                     delay(1500)
                     triggerNextQuestion()
@@ -244,7 +289,9 @@ fun GameScreen(
             selectedAnswer = index
             val isCorrect = index == currentQuestion?.correctAnswerIndex
             if (isCorrect) {
-                val points = 10 + (timeLeft * 1) 
+                correctAnswers++
+                val timeLeftInt = (animatedProgress.value * 15).toInt()
+                val points = 10 + (timeLeftInt * 1) 
                 userScore += points
             }
             
@@ -298,7 +345,29 @@ fun GameScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("No questions found!", fontFamily = FredokaOne, color = Color.White, fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(20.dp))
-                CartoonButton(text = "🏠  Return", onClick = { onNavigateToResults(0, userNickname, 0, "Opponent", 0, category, false) }, bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))), textColor = Color(0xFF475569))
+                CartoonButton(text = "🏠  Return", onClick = { onNavigateToResults(0, userNickname, 0, "Opponent", 0, category, false, 0) }, bgBrush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))), textColor = Color(0xFF475569))
+            }
+        }
+        return
+    }
+
+    if (isCountingDown && !isGameStarted) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E)))), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🔥", fontSize = 72.sp)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Get Ready!", fontFamily = FredokaOne, color = Color.White, fontSize = 24.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("$preGameCountdown", fontFamily = FredokaOne, color = Color(0xFFFBBF24), fontSize = 80.sp)
+            }
+        }
+        return
+    } else if (!isGameStarted && !isSingleplayer && !isCountingDown) {
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF0D0020), Color(0xFF1A0A2E)))), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFFFBBF24))
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Waiting for opponent...", fontFamily = Fredoka, color = Color.White.copy(0.8f), fontSize = 18.sp)
             }
         }
         return
@@ -329,10 +398,18 @@ fun GameScreen(
             }
             
             Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                val progress = timeLeft / 15f
-                val progressColor by animateColorAsState(if (timeLeft <= 5) Color.Red else Color(0xFF4ADE80), label = "color")
-                Box(modifier = Modifier.fillMaxWidth().height(12.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f))) {
-                    Box(modifier = Modifier.fillMaxWidth(progress).fillMaxHeight().clip(CircleShape).background(progressColor))
+                val progressValue = animatedProgress.value
+                val timeLeftInt = (progressValue * 15).toInt()
+                val progressColor by animateColorAsState(if (timeLeftInt <= 5) Color.Red else Color(0xFF4ADE80), label = "color")
+                
+                Box(modifier = Modifier.fillMaxWidth().height(14.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f))) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(progressValue),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f).height(14.dp).clip(RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp)).background(progressColor))
+                        Text("🔥", fontSize = 14.sp, modifier = Modifier.offset(x = 2.dp))
+                    }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -353,8 +430,8 @@ fun GameScreen(
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(0.08f)).border(3.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp)).padding(24.dp), contentAlignment = Alignment.Center) {
-                Text(text = currentQuestion.text, fontFamily = Fredoka, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 30.sp)
+            Box(modifier = Modifier.fillMaxWidth().weight(1f).heightIn(min = 120.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(0.08f)).border(3.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp)).padding(24.dp), contentAlignment = Alignment.Center) {
+                Text(text = currentQuestion.text, fontFamily = Fredoka, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 28.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -364,16 +441,6 @@ fun GameScreen(
                     AnswerOption(index = index, text = option, isSelected = selectedAnswer == index, isCorrect = index == currentQuestion.correctAnswerIndex, showResult = showSyncResult, onClick = { onAnswerSelected(index) })
                 }
             }
-        }
-
-        Box(modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 32.dp, end = 24.dp).size(64.dp), contentAlignment = Alignment.Center) {
-            val sweepAngle = 360f * (timeLeft / 15f)
-            val circleColor = if (timeLeft <= 5) Color.Red else Color.White
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(color = Color.White.copy(alpha = 0.2f), style = Stroke(width = 4.dp.toPx()))
-                drawArc(color = circleColor, startAngle = -90f, sweepAngle = sweepAngle, useCenter = false, style = Stroke(width = 4.dp.toPx()))
-            }
-            Text(text = timeLeft.toString(), color = circleColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -389,8 +456,8 @@ fun ScoreCard(name: String, score: String, status: String, icon: String, borderC
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(name, fontFamily = Fredoka, color = Color.White, fontSize = 12.sp)
-                    Text(status, fontFamily = Fredoka, color = borderColor, fontSize = 10.sp)
+                    Text(name, fontFamily = Fredoka, color = Color.White, fontSize = 12.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(status, fontFamily = Fredoka, color = borderColor, fontSize = 10.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 Text(score, fontFamily = FredokaOne, color = Color.White, fontSize = 26.sp)
             }

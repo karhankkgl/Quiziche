@@ -36,6 +36,7 @@ fun GameResultsScreen(
     category: String = "General",
     isSingleplayer: Boolean,
     isWinner: Boolean,
+    correctAnswers: Int = 0,
     onNavigateToMainMenu: () -> Unit,
     onNavigateToRematch: () -> Unit
 ) {
@@ -174,9 +175,9 @@ fun GameResultsScreen(
                     Text("📊  Match Stats", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        val accuracy = if (totalQuestions > 0) (score * 100) / totalQuestions else 0
+                        val accuracy = if (totalQuestions > 0) (correctAnswers * 100) / totalQuestions else 0
                         ResultStatChip("$totalQuestions", "Questions")
-                        ResultStatChip("$score", "Correct", Color(0xFF86EFAC))
+                        ResultStatChip("$correctAnswers", "Correct", Color(0xFF86EFAC))
                         ResultStatChip("$accuracy%", "Accuracy", Color(0xFFFBBF24))
                     }
                     Spacer(modifier = Modifier.height(16.dp))

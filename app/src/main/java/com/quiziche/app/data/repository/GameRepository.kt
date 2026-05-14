@@ -27,7 +27,7 @@ class GameRepository {
 
     val currentUid: String? get() = auth.currentUser?.uid
 
-    suspend fun joinMatchmaking(category: String, onMatchFound: (String) -> Unit) {
+    suspend fun joinMatchmaking(category: String, difficulty: String = "Any", onMatchFound: (String) -> Unit) {
         val uid = currentUid ?: return
         
         // 1. Ensure we're not already in the queue
@@ -75,8 +75,18 @@ class GameRepository {
         if (opponentUid != null) {
             // We claimed an opponent! We create the room.
             val roomId = UUID.randomUUID().toString()
-            val questionsResult = quizRepository.getQuestionsByCategory(category, 5)
-            val questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+            val questionsResult = quizRepository.getQuestionsByCategory(category, 5, difficulty)
+            var questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+            if (questionIds.isEmpty()) {
+                // Fallback 1: relax difficulty
+                val relaxed = quizRepository.getQuestionsByCategory(category, 5, "Any")
+                questionIds = relaxed.getOrNull()?.map { it.id } ?: emptyList()
+            }
+            if (questionIds.isEmpty()) {
+                // Fallback 2: use all categories
+                val fallback = quizRepository.getQuestionsByCategory("all", 5, "Any")
+                questionIds = fallback.getOrNull()?.map { it.id }?.shuffled()?.take(5) ?: emptyList()
+            }
             val session = GameSession(
                 sessionId = roomId,
                 player1Id = opponentUid,
@@ -87,9 +97,13 @@ class GameRepository {
                 startTime = System.currentTimeMillis()
             )
             roomsRef.child(roomId).setValue(session).await()
+            // Set disconnect handler for the room
+            setupDisconnectHandler(roomId)
             onMatchFound(roomId)
         } else {
             // We are in the queue, wait for someone to find us
+            categoryQueueRef.child(uid).onDisconnect().removeValue()
+            
             val roomQuery = roomsRef.orderByChild("player1Id").equalTo(uid)
             val roomListener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -99,6 +113,8 @@ class GameRepository {
                     }
                     if (room != null) {
                         val roomId = room.key!!
+                        categoryQueueRef.child(uid).onDisconnect().cancel()
+                        setupDisconnectHandler(roomId)
                         roomQuery.removeEventListener(this)
                         onMatchFound(roomId)
                     }
@@ -110,13 +126,23 @@ class GameRepository {
     }
 
     // --- PRIVATE ROOMS (Friend Mode) ---
-    suspend fun createPrivateRoom(category: String): Result<Pair<String, String>> {
+    suspend fun createPrivateRoom(category: String, difficulty: String = "Any"): Result<Pair<String, String>> {
         val uid = currentUid ?: return Result.failure(Exception("Not logged in"))
         val roomId = UUID.randomUUID().toString()
         val inviteCode = (100000..999999).random().toString()
         
-        val questionsResult = quizRepository.getQuestionsByCategory(category, 5)
-        val questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+        val questionsResult = quizRepository.getQuestionsByCategory(category, 5, difficulty)
+        var questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+        if (questionIds.isEmpty()) {
+            // Fallback: fetch any difficulty if strict difficulty returned nothing
+            val relaxedResult = quizRepository.getQuestionsByCategory(category, 5, "Any")
+            questionIds = relaxedResult.getOrNull()?.map { it.id } ?: emptyList()
+        }
+        if (questionIds.isEmpty()) {
+            // Final fallback: fetch from all categories
+            val fallbackResult = quizRepository.getQuestionsByCategory("all", 5, "Any")
+            questionIds = fallbackResult.getOrNull()?.map { it.id }?.shuffled()?.take(5) ?: emptyList()
+        }
         
         val session = GameSession(
             sessionId = roomId,
@@ -132,6 +158,7 @@ class GameRepository {
             withTimeout(10000) { // 10 second timeout
                 roomsRef.child(roomId).setValue(session).await()
             }
+            setupDisconnectHandler(roomId)
             Result.success(roomId to inviteCode)
         } catch (e: Exception) {
             Result.failure(e)
@@ -178,6 +205,7 @@ class GameRepository {
                 val roomId = room.key!!
                 roomsRef.child(roomId).child("player2Id").setValue(uid).await()
                 roomsRef.child(roomId).child("status").setValue("ACTIVE").await()
+                setupDisconnectHandler(roomId)
                 Result.success(roomId)
             } else {
                 Result.failure(Exception("Room not found or already full"))
@@ -189,7 +217,9 @@ class GameRepository {
     
     fun cancelMatchmaking(category: String) {
         val uid = currentUid ?: return
-        queueRef.child(category).child(uid).removeValue()
+        val ref = queueRef.child(category).child(uid)
+        ref.removeValue()
+        ref.onDisconnect().cancel()
     }
     
     fun observeGameSession(roomId: String): Flow<GameSession?> = callbackFlow {
@@ -200,7 +230,7 @@ class GameRepository {
                 trySend(session)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                close()
             }
         }
         ref.addValueEventListener(listener)
@@ -214,12 +244,21 @@ class GameRepository {
 
     suspend fun completeGame(roomId: String) {
         roomsRef.child(roomId).child("status").setValue("COMPLETED").await()
+        cancelDisconnectHandler(roomId)
+    }
+
+    fun setupDisconnectHandler(roomId: String) {
+        roomsRef.child(roomId).child("status").onDisconnect().setValue("ABANDONED")
+    }
+
+    fun cancelDisconnectHandler(roomId: String) {
+        roomsRef.child(roomId).child("status").onDisconnect().cancel()
     }
 
     // --- GAME INVITE SYSTEM ---
     private val invitesRef = database.getReference("game_invites")
 
-    suspend fun sendInvite(targetUid: String, senderName: String, category: String = "General"): Result<String> {
+    suspend fun sendInvite(targetUid: String, senderName: String, category: String = "all"): Result<String> {
         val uid = currentUid ?: return Result.failure(Exception("Not logged in"))
         val inviteId = UUID.randomUUID().toString()
         val inviteData = mapOf(
@@ -246,28 +285,47 @@ class GameRepository {
                 trySend(invites)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                close()
             }
         }
         ref.addValueEventListener(listener)
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    suspend fun acceptInvite(inviteId: String, senderUid: String, category: String): Result<String> {
+    suspend fun acceptInvite(inviteId: String, senderUid: String, category: String, receiverCategory: String): Result<String> {
         val uid = currentUid ?: return Result.failure(Exception("Not logged in"))
         return try {
             invitesRef.child(uid).child(inviteId).removeValue().await()
+            val formattedSenderCat = if (category == "all") "all" else category.replaceFirstChar { it.uppercase() }
+            val formattedReceiverCat = if (receiverCategory == "all") "all" else receiverCategory.replaceFirstChar { it.uppercase() }
             
+            val questionsResult1 = quizRepository.getQuestionsByCategory(formattedSenderCat, 5, "Any")
+            val questionsResult2 = quizRepository.getQuestionsByCategory(formattedReceiverCat, 5, "Any")
+            
+            val combined = (questionsResult1.getOrDefault(emptyList()) + questionsResult2.getOrDefault(emptyList()))
+                .distinctBy { it.id }
+                .shuffled()
+                .take(5)
+                
+            var questionIds = combined.map { it.id }
+            if (questionIds.isEmpty()) {
+                val fallback = quizRepository.getQuestionsByCategory("all", 5, "Any")
+                questionIds = fallback.getOrDefault(emptyList()).map { it.id }.shuffled().take(5)
+            }
+            val roomCategory = if (category == receiverCategory) category else "$category & $receiverCategory"
+
             val roomId = UUID.randomUUID().toString()
             val session = GameSession(
                 sessionId = roomId,
                 player1Id = senderUid,
                 player2Id = uid,
                 status = "ACTIVE",
-                category = category,
+                category = roomCategory,
+                questionIds = questionIds,
                 startTime = System.currentTimeMillis()
             )
             roomsRef.child(roomId).setValue(session).await()
+            setupDisconnectHandler(roomId)
             Result.success(roomId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -277,6 +335,21 @@ class GameRepository {
     suspend fun rejectInvite(inviteId: String) {
         currentUid?.let { uid ->
             invitesRef.child(uid).child(inviteId).removeValue().await()
+        }
+    }
+
+    suspend fun cleanUpUserGames() {
+        val uid = currentUid ?: return
+        try {
+            val snapshot = roomsRef.get().await()
+            for (child in snapshot.children) {
+                val session = child.getValue(GameSession::class.java)
+                if (session != null && session.status == "ACTIVE" && (session.player1Id == uid || session.player2Id == uid)) {
+                    child.ref.child("status").setValue("COMPLETED").await()
+                }
+            }
+        } catch (e: Exception) {
+            // ignore
         }
     }
 
@@ -292,6 +365,37 @@ class GameRepository {
         awaitClose { connectedRef.removeEventListener(listener) }
     }
 
+    fun setOnlinePresence() {
+        val uid = currentUid ?: return
+        val myConnectionsRef = database.getReference("users_status").child(uid)
+        val connectedRef = database.getReference(".info/connected")
+        
+        connectedRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val connected = snapshot.getValue(Boolean::class.java) ?: false
+                if (connected) {
+                    myConnectionsRef.onDisconnect().setValue("offline")
+                    myConnectionsRef.setValue("online")
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    fun observeUserStatus(uid: String): Flow<String> = callbackFlow {
+        val ref = database.getReference("users_status").child(uid)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trySend(snapshot.getValue(String::class.java) ?: "offline")
+            }
+            override fun onCancelled(error: DatabaseError) {
+                close()
+            }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
     fun getActiveGames(): Flow<List<GameSession>> = callbackFlow {
         val uid = currentUid ?: return@callbackFlow
         val listener = object : ValueEventListener {
@@ -301,7 +405,7 @@ class GameRepository {
                 trySend(rooms)
             }
             override fun onCancelled(error: DatabaseError) {
-                close(error.toException())
+                close()
             }
         }
         roomsRef.addValueEventListener(listener)

@@ -43,7 +43,8 @@ data class MatchResult(
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
-    onLogOut: () -> Unit
+    onLogOut: () -> Unit,
+    onNavigateToAvatarSelection: () -> Unit
 ) {
     val authRepository = remember { AuthRepository() }
     val userRepository = remember { UserRepository() }
@@ -112,7 +113,8 @@ fun ProfileScreen(
                             .shadow(elevation = 10.dp, shape = CircleShape, spotColor = Color(0xFF475569).copy(0.3f))
                             .size(80.dp).clip(CircleShape)
                             .background(Brush.linearGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316))))
-                            .border(4.dp, Color.White, CircleShape).scale(avatarScale),
+                            .border(4.dp, Color.White, CircleShape).scale(avatarScale)
+                            .clickable { onNavigateToAvatarSelection() },
                             contentAlignment = Alignment.Center) {
                             Text(userProfile?.avatarIcon ?: "🎮", fontSize = 44.sp)
                         }
@@ -217,6 +219,7 @@ fun ProfileScreen(
 @Composable
 fun CartoonMatchHistoryCard(match: MatchResult) {
     val isWin = match.result == "won"
+    val isSolo = match.opponentName == "Solo"
     Box(
         modifier = Modifier
             .padding(horizontal = 20.dp)
@@ -240,10 +243,20 @@ fun CartoonMatchHistoryCard(match: MatchResult) {
                 Text(match.category, fontFamily = Fredoka, color = Color.White.copy(0.8f), fontSize = 12.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text(match.score, fontFamily = FredokaOne, fontSize = 18.sp, color = Color.White)
-                Box(modifier = Modifier.clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(0.25f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
-                    Text(if (isWin) "WIN 🏆" else "LOSS", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                if (isSolo) {
+                    Text("Score: ${match.score}", fontFamily = FredokaOne, fontSize = 16.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(Color.White.copy(0.25f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                        Text("SOLO", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                    }
+                } else {
+                    Text(match.score, fontFamily = FredokaOne, fontSize = 18.sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .background(Color.White.copy(0.25f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
+                        Text(if (isWin) "WIN 🏆" else "LOSS", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                    }
                 }
             }
         }

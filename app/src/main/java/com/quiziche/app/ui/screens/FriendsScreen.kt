@@ -21,8 +21,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.quiziche.app.data.model.User
-import com.quiziche.app.data.repository.AuthRepository
 import com.quiziche.app.data.repository.UserRepository
+import com.quiziche.app.data.repository.GameRepository
 import com.quiziche.app.ui.theme.*
 import com.quiziche.app.ui.components.*
 import kotlinx.coroutines.launch
@@ -36,26 +36,56 @@ fun FriendsScreen(
     onNavigateToLeaderboard: () -> Unit
 ) {
     val userRepository = remember { UserRepository() }
-    val authRepository = remember { AuthRepository() }
+    val authRepository = remember { com.quiziche.app.data.repository.AuthRepository() }
+    val gameRepository = remember { GameRepository() }
     val scope = rememberCoroutineScope()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
     var friendsList by remember { mutableStateOf<List<User>>(emptyList()) }
+    var searchResults by remember { mutableStateOf<List<User>>(emptyList()) }
+    var pendingRequests by remember { mutableStateOf<List<User>>(emptyList()) }
+    var sentRequests by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var currentUid by remember { mutableStateOf<String?>(null) }
+    var currentUserName by remember { mutableStateOf("Player") }
+    var selectedBattleUser by remember { mutableStateOf<User?>(null) }
+
+    fun refreshData() {
+        scope.launch {
+            val uid = authRepository.currentUserUID
+            currentUid = uid
+            if (uid != null) {
+                val result = userRepository.getUserProfile(uid)
+                if (result.isSuccess) {
+                    val user = result.getOrNull()
+                    currentUserName = user?.name ?: "Player"
+                    friendsList = user?.friends?.mapNotNull { fid ->
+                        userRepository.getUserProfile(fid).getOrNull()
+                    } ?: emptyList()
+                    pendingRequests = user?.friendRequests?.mapNotNull { fid ->
+                        userRepository.getUserProfile(fid).getOrNull()
+                    } ?: emptyList()
+                    sentRequests = user?.sentFriendRequests ?: emptyList()
+                }
+            }
+            isLoading = false
+        }
+    }
 
     LaunchedEffect(Unit) {
-        val uid = authRepository.currentUserUID
-        if (uid != null) {
-            val result = userRepository.getUserProfile(uid)
-            if (result.isSuccess) {
-                val user = result.getOrNull()
-                friendsList = user?.friends?.mapNotNull { fid ->
-                    userRepository.getUserProfile(fid).getOrNull()
-                } ?: emptyList()
+        refreshData()
+    }
+    
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length >= 2) {
+            val res = userRepository.searchUsersByUsername(searchQuery)
+            if (res.isSuccess) {
+                searchResults = res.getOrDefault(emptyList()).filter { it.uid != currentUid }
             }
+        } else {
+            searchResults = emptyList()
         }
-        isLoading = false
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "friends_anim")
@@ -142,6 +172,33 @@ fun FriendsScreen(
                                 CircularProgressIndicator(color = Color(0xFF0EA5E9))
                             }
                         }
+                    } else if (searchQuery.isNotEmpty()) {
+                        if (searchResults.isEmpty()) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                                    Text("No users found", color = Color.White)
+                                }
+                            }
+                        } else {
+                            items(searchResults.size) { idx ->
+                                val user = searchResults[idx]
+                                val isFriend = friendsList.any { it.uid == user.uid }
+                                val hasSent = sentRequests.contains(user.uid)
+                                SearchFriendItem(
+                                    user = user,
+                                    isFriend = isFriend,
+                                    hasSent = hasSent,
+                                    onSendRequest = {
+                                        scope.launch {
+                                            currentUid?.let { uid ->
+                                                userRepository.sendFriendRequest(uid, user.uid)
+                                                refreshData()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     } else if (friendsList.isEmpty()) {
                         item {
                             Box(modifier = Modifier.fillMaxWidth()
@@ -154,28 +211,55 @@ fun FriendsScreen(
                                     Text("🐬", fontSize = 56.sp, modifier = Modifier.offset(y = dolphinY.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("No friends yet!", fontFamily = FredokaOne, color = Color.White, fontSize = 18.sp)
-                                    Text("Invite someone to play!", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 14.sp)
+                                    Text("Search to add someone!", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 14.sp)
                                 }
                             }
                         }
                     } else {
-                        val filtered = friendsList.filter { it.name.contains(searchQuery, ignoreCase = true) }
-                        items(filtered.size) { idx ->
-                            CartoonFriendItem(friend = filtered[idx])
+                        items(friendsList.size) { idx ->
+                            CartoonFriendItem(
+                                friend = friendsList[idx],
+                                onBattleClick = { selectedBattleUser = friendsList[idx] }
+                            )
                         }
                     }
                 } else {
-                    item {
-                        Box(modifier = Modifier.fillMaxWidth()
-                            .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF475569).copy(0.25f))
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(Color(0xFF1E293B)).border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(24.dp))
-                            .padding(24.dp), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("📨", fontSize = 48.sp)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("No pending requests", fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
+                    if (pendingRequests.isEmpty()) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth()
+                                .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0xFF475569).copy(0.25f))
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(Color(0xFF1E293B)).border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(24.dp))
+                                .padding(24.dp), contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("📨", fontSize = 48.sp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("No pending requests", fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
+                                }
                             }
+                        }
+                    } else {
+                        items(pendingRequests.size) { idx ->
+                            val user = pendingRequests[idx]
+                            RequestItem(
+                                user = user,
+                                onAccept = {
+                                    scope.launch {
+                                        currentUid?.let { uid ->
+                                            userRepository.acceptFriendRequest(uid, user.uid)
+                                            refreshData()
+                                        }
+                                    }
+                                },
+                                onReject = {
+                                    scope.launch {
+                                        currentUid?.let { uid ->
+                                            userRepository.rejectFriendRequest(uid, user.uid)
+                                            refreshData()
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -194,17 +278,31 @@ fun FriendsScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu)
-                CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories)
-                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
-                CartoonNavItem(emoji = "🦁", label = "Friends", isSelected = true, onClick = {})
+                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🗂️", label = "Categories", onClick = onNavigateToCategories, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🦁", label = "Friends", isSelected = true, onClick = {}, modifier = Modifier.weight(1f))
             }
         }
+    }
+
+    if (selectedBattleUser != null) {
+        CategorySelectionDialog(
+            onDismissRequest = { selectedBattleUser = null },
+            onCategorySelected = { cat ->
+                scope.launch {
+                    gameRepository.sendInvite(selectedBattleUser!!.uid, currentUserName, category = cat)
+                    selectedBattleUser = null
+                }
+            }
+        )
     }
 }
 
 @Composable
-fun CartoonFriendItem(friend: User) {
+fun CartoonFriendItem(friend: User, onBattleClick: () -> Unit) {
+    val gameRepository = remember { com.quiziche.app.data.repository.GameRepository() }
+    val status by gameRepository.observeUserStatus(friend.uid).collectAsState(initial = "offline")
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -225,16 +323,99 @@ fun CartoonFriendItem(friend: User) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(friend.name, fontFamily = FredokaOne, color = Color.White, fontSize = 16.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                    val isOnline = status == "online"
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (isOnline) Color(0xFF10B981) else Color.Gray))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Online", fontFamily = Fredoka, color = Color(0xFF10B981), fontSize = 12.sp)
+                    Text(if (isOnline) "Online" else "Offline", fontFamily = Fredoka, color = if (isOnline) Color(0xFF10B981) else Color.Gray, fontSize = 12.sp)
                 }
             }
+            var inviteSent by remember { mutableStateOf(false) }
             Box(modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6))))
+                .background(if (inviteSent) androidx.compose.ui.graphics.SolidColor(Color.Gray) else Brush.linearGradient(listOf(Color(0xFF0EA5E9), Color(0xFF14B8A6))))
                 .border(2.dp, Color(0xFF475569), RoundedCornerShape(12.dp))
+                .clickable(enabled = !inviteSent) {
+                    inviteSent = true
+                    onBattleClick()
+                }
                 .padding(horizontal = 14.dp, vertical = 6.dp)) {
-                Text("⚔️ Battle", fontFamily = FredokaOne, fontSize = 13.sp, color = Color.White)
+                Text(if (inviteSent) "Sent ✓" else "⚔️ Battle", fontFamily = FredokaOne, fontSize = 13.sp, color = Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchFriendItem(user: User, isFriend: Boolean, hasSent: Boolean, onSendRequest: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(0.6f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFF1E293B))
+            .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(20.dp))
+            .padding(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(44.dp).clip(CircleShape)
+                .background(Color.White.copy(0.05f))
+                .border(1.5.dp, Color.White.copy(0.15f), CircleShape),
+                contentAlignment = Alignment.Center) {
+                Text(user.avatarIcon, fontSize = 22.sp)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(user.name, fontFamily = FredokaOne, color = Color.White, fontSize = 15.sp)
+                Text("Lvl ${user.level} • ${user.topCategory}", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 12.sp)
+            }
+            if (isFriend) {
+                Text("Friend", color = Color(0xFF10B981), fontFamily = FredokaOne, fontSize = 13.sp)
+            } else if (hasSent) {
+                Text("Sent", color = Color.Gray, fontFamily = FredokaOne, fontSize = 13.sp)
+            } else {
+                Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF0EA5E9)).clickable { onSendRequest() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text("Add +", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RequestItem(user: User, onAccept: () -> Unit, onReject: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp), spotColor = Color.Black.copy(0.6f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFF1E293B))
+            .border(1.5.dp, Color.White.copy(0.1f), RoundedCornerShape(20.dp))
+            .padding(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(44.dp).clip(CircleShape)
+                .background(Color.White.copy(0.05f))
+                .border(1.5.dp, Color.White.copy(0.15f), CircleShape),
+                contentAlignment = Alignment.Center) {
+                Text(user.avatarIcon, fontSize = 22.sp)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(user.name, fontFamily = FredokaOne, color = Color.White, fontSize = 15.sp)
+                Text("Lvl ${user.level}", fontFamily = Fredoka, color = Color.White.copy(0.6f), fontSize = 12.sp)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFEF4444)).clickable { onReject() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text("✖", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                }
+                Box(modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF10B981)).clickable { onAccept() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Text("✔", fontFamily = FredokaOne, fontSize = 12.sp, color = Color.White)
+                }
             }
         }
     }

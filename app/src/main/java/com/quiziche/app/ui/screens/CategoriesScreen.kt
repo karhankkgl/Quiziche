@@ -73,7 +73,7 @@ fun CategoriesScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 20.dp),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -137,10 +137,10 @@ fun CategoriesScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu)
-                CartoonNavItem(emoji = "🗂️", label = "Categories", isSelected = true, onClick = {})
-                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard)
-                CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends)
+                CartoonNavItem(emoji = "🏠", label = "Home", isSelected = false, onClick = onNavigateToMainMenu, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🗂️", label = "Categories", isSelected = true, onClick = {}, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🏆", label = "Rankings", onClick = onNavigateToLeaderboard, modifier = Modifier.weight(1f))
+                CartoonNavItem(emoji = "🦁", label = "Friends", onClick = onNavigateToFriends, modifier = Modifier.weight(1f))
             }
         }
     }
