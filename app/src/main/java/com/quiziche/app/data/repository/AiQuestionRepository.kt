@@ -18,8 +18,8 @@ class AiQuestionRepository {
     private val quizRepository = QuizRepository()
 
     /**
-     * Tüm kategoriler için toplu soru üretir.
-     * Her kategori tamamlandığında onProgress callback'ini çağırır.
+     * Bulk seeds questions for all predefined categories.
+     * Triggers onProgress callback upon completing each category.
      */
     suspend fun generateForAllCategories(
         difficulty: String = "Medium",
@@ -38,7 +38,7 @@ class AiQuestionRepository {
             val savedCount = if (result.isSuccess) result.getOrDefault(emptyList()).size else 0
             results[category] = savedCount
             onProgress(category, index + 1, allCategories.size, result.isSuccess)
-            // Rate limiting: Free Tier limiti (15 RPM) aşılmaması için 6.5 saniye bekleme süresi
+            // Rate limiting: 6.5s delay to stay within the 15 RPM free tier limit
             kotlinx.coroutines.delay(6500)
         }
 
@@ -47,8 +47,8 @@ class AiQuestionRepository {
     }
 
     /**
-     * Gemini ile verilen kategori ve zorluk için sorular üretir,
-     * Firestore'a isAiGenerated=true olarak kaydeder.
+     * Generates questions for a specific category and difficulty via Gemini,
+     * then saves them to Firestore with isAiGenerated=true.
      */
 
     suspend fun generateAndSaveQuestions(
@@ -70,7 +70,7 @@ class AiQuestionRepository {
                 throw Exception("No questions could be parsed from the AI response")
             }
 
-            // Firestore'a kaydet
+            // Save generated questions to Firestore
             val savedQuestions = mutableListOf<Question>()
             questions.forEach { question ->
                 val result = quizRepository.saveGeneratedQuestion(question)
@@ -113,13 +113,13 @@ Generate $count questions now:
         difficulty: String
     ): List<Question> {
         return try {
-            // JSON array'i bulmak için temizle
+            // Clean up Markdown formatting from raw response
             val cleaned = rawText
                 .replace("```json", "")
                 .replace("```", "")
                 .trim()
 
-            // [ ile başlayan kısmı bul
+            // Locate JSON array boundaries
             val startIndex = cleaned.indexOf('[')
             val endIndex = cleaned.lastIndexOf(']')
 
