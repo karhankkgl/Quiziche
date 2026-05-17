@@ -232,16 +232,16 @@ fun GameScreen(
 
     LaunchedEffect(Unit) {
         if (isSingleplayer || roomId == null) {
-            var result = quizRepository.getQuestionsByCategory(category, 5, difficulty)
+            var result = quizRepository.getQuestionsByCategory(category, 30, difficulty)
             var loaded = result.getOrDefault(emptyList()).shuffled().take(5)
             if (loaded.isEmpty() && difficulty != "Any") {
                 // Fallback 1: relax difficulty filter
-                result = quizRepository.getQuestionsByCategory(category, 5, "Any")
+                result = quizRepository.getQuestionsByCategory(category, 30, "Any")
                 loaded = result.getOrDefault(emptyList()).shuffled().take(5)
             }
             if (loaded.isEmpty()) {
                 // Fallback 2: all categories
-                result = quizRepository.getQuestionsByCategory("all", 5, "Any")
+                result = quizRepository.getQuestionsByCategory("all", 30, "Any")
                 loaded = result.getOrDefault(emptyList()).shuffled().take(5)
             }
             questions = loaded
@@ -430,9 +430,47 @@ fun GameScreen(
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().weight(1f).heightIn(min = 120.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(0.08f)).border(3.dp, Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp)).padding(24.dp), contentAlignment = Alignment.Center) {
-                Text(text = currentQuestion.text, fontFamily = Fredoka, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 28.sp)
+            Box(modifier = Modifier.fillMaxWidth().weight(1f).heightIn(min = 120.dp).clip(RoundedCornerShape(28.dp)).background(Color.White.copy(0.08f)).border(3.dp, if (currentQuestion.isAiGenerated) Color(0xFFA78BFA).copy(0.7f) else Color(0xFFFBBF24).copy(0.4f), RoundedCornerShape(28.dp)).padding(24.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // AI Badge
+                    if (currentQuestion.isAiGenerated) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF7C3AED), Color(0xFFEC4899))
+                                    )
+                                )
+                                .border(1.dp, Color.White.copy(0.3f), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 10.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                "✨ AI Generated",
+                                fontFamily = FredokaOne,
+                                color = Color.White,
+                                fontSize = 11.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    val questionText = androidx.compose.ui.text.buildAnnotatedString {
+                        append(currentQuestion.text)
+                        if (currentQuestion.isAiGenerated) {
+                            pushStyle(
+                                androidx.compose.ui.text.SpanStyle(
+                                    color = Color(0xFFF472B6), // Pink accent
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            append(" 🤖 AI")
+                            pop()
+                        }
+                    }
+                    Text(text = questionText, fontFamily = Fredoka, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 28.sp)
+                }
             }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 

@@ -75,17 +75,17 @@ class GameRepository {
         if (opponentUid != null) {
             // We claimed an opponent! We create the room.
             val roomId = UUID.randomUUID().toString()
-            val questionsResult = quizRepository.getQuestionsByCategory(category, 5, difficulty)
-            var questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+            val questionsResult = quizRepository.getQuestionsByCategory(category, 30, difficulty)
+            var questionIds = questionsResult.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
             if (questionIds.isEmpty()) {
                 // Fallback 1: relax difficulty
-                val relaxed = quizRepository.getQuestionsByCategory(category, 5, "Any")
-                questionIds = relaxed.getOrNull()?.map { it.id } ?: emptyList()
+                val relaxed = quizRepository.getQuestionsByCategory(category, 30, "Any")
+                questionIds = relaxed.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
             }
             if (questionIds.isEmpty()) {
                 // Fallback 2: use all categories
-                val fallback = quizRepository.getQuestionsByCategory("all", 5, "Any")
-                questionIds = fallback.getOrNull()?.map { it.id }?.shuffled()?.take(5) ?: emptyList()
+                val fallback = quizRepository.getQuestionsByCategory("all", 30, "Any")
+                questionIds = fallback.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
             }
             val session = GameSession(
                 sessionId = roomId,
@@ -131,17 +131,17 @@ class GameRepository {
         val roomId = UUID.randomUUID().toString()
         val inviteCode = (100000..999999).random().toString()
         
-        val questionsResult = quizRepository.getQuestionsByCategory(category, 5, difficulty)
-        var questionIds = questionsResult.getOrNull()?.map { it.id } ?: emptyList()
+        val questionsResult = quizRepository.getQuestionsByCategory(category, 30, difficulty)
+        var questionIds = questionsResult.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
         if (questionIds.isEmpty()) {
             // Fallback: fetch any difficulty if strict difficulty returned nothing
-            val relaxedResult = quizRepository.getQuestionsByCategory(category, 5, "Any")
-            questionIds = relaxedResult.getOrNull()?.map { it.id } ?: emptyList()
+            val relaxedResult = quizRepository.getQuestionsByCategory(category, 30, "Any")
+            questionIds = relaxedResult.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
         }
         if (questionIds.isEmpty()) {
             // Final fallback: fetch from all categories
-            val fallbackResult = quizRepository.getQuestionsByCategory("all", 5, "Any")
-            questionIds = fallbackResult.getOrNull()?.map { it.id }?.shuffled()?.take(5) ?: emptyList()
+            val fallbackResult = quizRepository.getQuestionsByCategory("all", 30, "Any")
+            questionIds = fallbackResult.getOrNull()?.shuffled()?.take(5)?.map { it.id } ?: emptyList()
         }
         
         val session = GameSession(
@@ -299,8 +299,8 @@ class GameRepository {
             val formattedSenderCat = if (category == "all") "all" else category.replaceFirstChar { it.uppercase() }
             val formattedReceiverCat = if (receiverCategory == "all") "all" else receiverCategory.replaceFirstChar { it.uppercase() }
             
-            val questionsResult1 = quizRepository.getQuestionsByCategory(formattedSenderCat, 5, "Any")
-            val questionsResult2 = quizRepository.getQuestionsByCategory(formattedReceiverCat, 5, "Any")
+            val questionsResult1 = quizRepository.getQuestionsByCategory(formattedSenderCat, 20, "Any")
+            val questionsResult2 = quizRepository.getQuestionsByCategory(formattedReceiverCat, 20, "Any")
             
             val combined = (questionsResult1.getOrDefault(emptyList()) + questionsResult2.getOrDefault(emptyList()))
                 .distinctBy { it.id }
@@ -309,8 +309,8 @@ class GameRepository {
                 
             var questionIds = combined.map { it.id }
             if (questionIds.isEmpty()) {
-                val fallback = quizRepository.getQuestionsByCategory("all", 5, "Any")
-                questionIds = fallback.getOrDefault(emptyList()).map { it.id }.shuffled().take(5)
+                val fallback = quizRepository.getQuestionsByCategory("all", 30, "Any")
+                questionIds = fallback.getOrDefault(emptyList()).shuffled().take(5).map { it.id }
             }
             val roomCategory = if (category == receiverCategory) category else "$category & $receiverCategory"
 

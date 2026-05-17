@@ -34,12 +34,6 @@ fun QuizicheApp() {
     val startDest = if (authRepository.isUserLoggedIn()) "main_menu" else "login"
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        val quizRepo = com.quiziche.app.data.repository.QuizRepository()
-        val result = quizRepo.getQuestionsByCategory("all", 1)
-        if (result.isSuccess && result.getOrDefault(emptyList()).isEmpty()) {
-            com.quiziche.app.data.repository.QuestionSeeder().seedQuestions()
-        }
-        
         val userRepo = com.quiziche.app.data.repository.UserRepository()
         val usersResult = userRepo.getLeaderboard(1)
         if (usersResult.isSuccess && usersResult.getOrDefault(emptyList()).isEmpty()) {
@@ -127,7 +121,8 @@ fun QuizicheApp() {
                         popUpTo("main_menu") { inclusive = true }
                     }
                 },
-                onNavigateToAvatarSelection = { navController.navigate("avatar_selection") }
+                onNavigateToAvatarSelection = { navController.navigate("avatar_selection") },
+                onNavigateToAdmin = { navController.navigate("admin") }
             )
         }
         composable("avatar_selection") {
@@ -137,6 +132,11 @@ fun QuizicheApp() {
         }
         composable("missions") {
             MissionsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable("admin") {
+            AdminScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

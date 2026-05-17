@@ -44,7 +44,8 @@ data class MatchResult(
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
     onLogOut: () -> Unit,
-    onNavigateToAvatarSelection: () -> Unit
+    onNavigateToAvatarSelection: () -> Unit,
+    onNavigateToAdmin: () -> Unit = {}
 ) {
     val authRepository = remember { AuthRepository() }
     val userRepository = remember { UserRepository() }
@@ -207,9 +208,47 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
-        }
 
-        // Decorations (on top)
+            // ===== ADMIN PANEL BUTTON (only visible for admin account) =====
+            if (authRepository.isAdmin) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth()
+                        .shadow(elevation = 10.dp, shape = RoundedCornerShape(20.dp), spotColor = Color(0xFF7C3AED).copy(0.5f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF4C1D95), Color(0xFF7C3AED), Color(0xFFEC4899))
+                            )
+                        )
+                        .border(2.dp, Color(0xFFA78BFA).copy(0.5f), RoundedCornerShape(20.dp))
+                        .clickable { onNavigateToAdmin() }
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("✨", fontSize = 28.sp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "AI Question Generator",
+                                fontFamily = FredokaOne,
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                "Generate questions with Gemini AI",
+                                fontFamily = Fredoka,
+                                color = Color.White.copy(0.75f),
+                                fontSize = 12.sp
+                            )
+                        }
+                        Text("›", fontSize = 24.sp, color = Color.White.copy(0.7f))
+                    }
+                }
+            }
+        }
         Text("🦓", fontSize = 56.sp, modifier = Modifier.offset(290.dp, 100.dp).rotate(zebraRotate))
         Text("⭐", fontSize = 28.sp, modifier = Modifier.offset(20.dp, 180.dp).scale(avatarScale))
         Text("🦒", fontSize = 32.sp, modifier = Modifier.offset(300.dp, 280.dp).rotate(-zebraRotate))

@@ -13,6 +13,13 @@ class AuthRepository {
     val currentUserUID: String?
         get() = auth.currentUser?.uid
 
+    val currentUserEmail: String?
+        get() = auth.currentUser?.email
+
+    val isAdmin: Boolean
+        get() = auth.currentUser?.email == "karhan@gmail.com"
+
+
     suspend fun register(email: String, password: String, name: String): Result<User> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()

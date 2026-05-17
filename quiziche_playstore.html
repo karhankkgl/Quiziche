@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiziche – Google Play Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Roboto', sans-serif; background: #f8f9fa; color: #202124; }
+
+  /* ── PRINT / PDF ── */
+  @media print {
+    body { background: #fff; }
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+  }
+
+  /* ── TOP BAR ── */
+  .top-bar { background: #fff; border-bottom: 1px solid #e0e0e0; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .top-bar .logo { font-family: 'Google Sans', sans-serif; font-size: 20px; color: #5f6368; }
+  .top-bar .search { flex: 1; background: #f1f3f4; border: none; border-radius: 24px; padding: 8px 20px; font-size: 14px; color: #5f6368; }
+
+  /* ── HERO SECTION ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+  .hero { display: flex; gap: 24px; align-items: flex-start; margin-bottom: 32px; }
+  .app-icon { width: 120px; height: 120px; border-radius: 24px; flex-shrink: 0; overflow: hidden; border: 1px solid #e0e0e0; }
+  .app-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .app-icon-placeholder { width: 120px; height: 120px; border-radius: 24px; background: linear-gradient(135deg, #1A0A2E, #4C1D95); display: flex; align-items: center; justify-content: center; font-size: 64px; flex-shrink: 0; }
+  .screenshot { flex-shrink: 0; width: 200px; border-radius: 16px; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+  .screenshot img { width: 100%; display: block; object-fit: cover; }
+  .screenshot .ss-caption { text-align:center; font-size:11px; color:#5f6368; padding:6px 4px; background:#fafafa; }
+
+  .hero-info { flex: 1; }
+  .hero-info h1 { font-family: 'Google Sans', sans-serif; font-size: 28px; font-weight: 700; color: #202124; margin-bottom: 4px; }
+  .developer { color: #01875f; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+  .rating-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .stars { color: #f9ab00; font-size: 14px; letter-spacing: 2px; }
+  .rating-num { font-size: 14px; color: #5f6368; }
+  .badge { background: #e8f5e9; color: #137333; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; }
+  .badge.dark { background: #e8eaf6; color: #3949ab; }
+  .install-btn { background: #01875f; color: #fff; border: none; border-radius: 8px; padding: 12px 40px; font-size: 16px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; }
+  .install-btn:hover { background: #016c4d; }
+
+  /* ── META ROW ── */
+  .meta-row { display: flex; gap: 0; border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; margin-bottom: 28px; }
+  .meta-item { flex: 1; text-align: center; padding: 16px 8px; border-right: 1px solid #e0e0e0; }
+  .meta-item:last-child { border-right: none; }
+  .meta-item .val { font-family: 'Google Sans', sans-serif; font-size: 18px; font-weight: 700; color: #202124; }
+  .meta-item .lbl { font-size: 11px; color: #5f6368; margin-top: 2px; }
+
+  /* ── SCREENSHOTS ── */
+  .section-title { font-family: 'Google Sans', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 16px; color: #202124; }
+  .screenshots { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 32px; }
+
+  /* ── DESCRIPTION ── */
+  .description-box { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 28px; border: 1px solid #e0e0e0; }
+  .description-box p { font-size: 14px; line-height: 1.7; color: #3c4043; margin-bottom: 12px; }
+  .description-box p:last-child { margin-bottom: 0; }
+  .desc-more { color: #01875f; font-size: 14px; font-weight: 500; cursor: pointer; }
+
+  /* ── FEATURES ── */
+  .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+  .feature-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid #e0e0e0; display: flex; gap: 12px; align-items: flex-start; }
+  .feature-icon { font-size: 28px; flex-shrink: 0; }
+  .feature-title { font-family: 'Google Sans', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .feature-desc { font-size: 12px; color: #5f6368; line-height: 1.5; }
+
+  /* ── RATINGS ── */
+  .ratings-box { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 28px; border: 1px solid #e0e0e0; display: flex; gap: 32px; align-items: center; }
+  .big-rating { text-align: center; }
+  .big-rating .num { font-size: 56px; font-weight: 700; font-family: 'Google Sans', sans-serif; line-height: 1; }
+  .big-rating .stars { font-size: 20px; margin: 4px 0; }
+  .big-rating .count { font-size: 12px; color: #5f6368; }
+  .bars { flex: 1; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .bar-label { font-size: 12px; color: #5f6368; width: 12px; }
+  .bar-track { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: #f9ab00; border-radius: 4px; }
+
+  /* ── ADDITIONAL DETAILS ── */
+  .details-box { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 28px; border: 1px solid #e0e0e0; }
+  .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f3f4; font-size: 14px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: #5f6368; }
+  .detail-val { font-weight: 500; color: #202124; text-align: right; }
+
+  /* ── PRIVACY & MONETIZATION ── */
+  .info-box { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 28px; border: 1px solid #e0e0e0; }
+  .info-box h3 { font-family: 'Google Sans', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .info-box ul { padding-left: 20px; }
+  .info-box ul li { font-size: 14px; color: #3c4043; line-height: 1.8; }
+  .info-box p { font-size: 14px; color: #3c4043; line-height: 1.7; }
+
+  /* ── PERMISSIONS ── */
+  .perm-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f3f4; }
+  .perm-row:last-child { border-bottom: none; }
+  .perm-icon { font-size: 22px; }
+  .perm-text .ptitle { font-size: 14px; font-weight: 500; }
+  .perm-text .pdesc { font-size: 12px; color: #5f6368; }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; font-size: 12px; color: #80868b; padding: 24px; border-top: 1px solid #e0e0e0; margin-top: 16px; }
+
+  /* ── PAGE LABEL for print ── */
+  .page-label { background: linear-gradient(135deg, #1A0A2E, #4C1D95); color: #fff; text-align: center; padding: 10px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar no-print">
+  <span class="logo">▶ Google Play</span>
+  <input class="search" type="text" value="Quiziche" readonly>
+  <span style="color:#5f6368; font-size:14px;">Apps &amp; Games</span>
+</div>
+
+<div class="page-label">Google Play Store — Mock Listing | Quiziche Quiz App</div>
+
+<div class="container">
+
+  <!-- ══════════ 1. HERO ══════════ -->
+  <div class="hero">
+    <div class="app-icon"><img src="Quiziche_App_Icon.png" alt="Quiziche App Icon"></div>
+    <div class="hero-info">
+      <h1>Quiziche — Battle Quiz Game</h1>
+      <div class="developer">QuizicheDev Studio</div>
+      <div class="rating-row">
+        <span class="stars">★★★★★</span>
+        <span class="rating-num">4.8 · 1,240 reviews</span>
+        <span class="badge">🏆 Top Quiz Game</span>
+        <span class="badge dark">🎮 Multiplayer</span>
+      </div>
+      <button class="install-btn">Install (Free)</button>
+    </div>
+  </div>
+
+  <!-- META ROW -->
+  <div class="meta-row">
+    <div class="meta-item"><div class="val">4.8 ★</div><div class="lbl">Rating</div></div>
+    <div class="meta-item"><div class="val">10K+</div><div class="lbl">Downloads</div></div>
+    <div class="meta-item"><div class="val">Free</div><div class="lbl">Price</div></div>
+    <div class="meta-item"><div class="val">3+</div><div class="lbl">Age Rating</div></div>
+    <div class="meta-item"><div class="val">28 MB</div><div class="lbl">Size</div></div>
+  </div>
+
+  <!-- ══════════ 2. SCREENSHOTS ══════════ -->
+  <div class="section-title">📱 Screenshots</div>
+  <div class="screenshots">
+    <div class="screenshot">
+      <img src="quiziche_mainmenu.png" alt="Main Menu">
+      <div class="ss-caption">🏠 Main Menu</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_gamescreen.png" alt="Game Screen">
+      <div class="ss-caption">⚡ Live Game</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_solo_game_screen.png" alt="Solo Game">
+      <div class="ss-caption">🦓 Solo Mode</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_leaderboard.png" alt="Leaderboard">
+      <div class="ss-caption">🏆 Rankings</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_profile.png" alt="Profile">
+      <div class="ss-caption">👤 Profile</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_categories.png" alt="Categories">
+      <div class="ss-caption">🗂️ Categories</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_category_details.png" alt="Category Details">
+      <div class="ss-caption">🔬 Category Detail</div>
+    </div>
+    <div class="screenshot">
+      <img src="quiziche_friendscreen.png" alt="Friends Screen">
+      <div class="ss-caption">🦁 Friends</div>
+    </div>
+  </div>
+
+  <!-- ══════════ 3. DESCRIPTION ══════════ -->
+  <div class="section-title">📝 About This App</div>
+  <div class="description-box">
+    <p>
+      <strong>Quiziche</strong> is a fast-paced, real-time quiz battle game where your knowledge is your weapon! 
+      Challenge players around the world or invite your friends to a private room and see who reigns supreme 
+      across dozens of knowledge categories.
+    </p>
+    <p>
+      Whether you're a science genius, a history buff, or a pop-culture fanatic — Quiziche has the perfect 
+      category for you. Earn coins, climb the ELO leaderboard, complete Global Missions, and customize 
+      your profile avatar as you rise through the ranks.
+    </p>
+    <p>
+      With a sleek dark-themed UI, smooth animations, and a cartoon-style design that makes learning fun, 
+      Quiziche delivers a premium quiz experience unlike any other. Play solo to sharpen your skills, or 
+      jump into a multiplayer battle for ultimate bragging rights!
+    </p>
+    <p>
+      🔥 Real-time 1v1 battles powered by Firebase<br>
+      🌍 Global Missions updated weekly<br>
+      ⚡ ELO-based competitive ranking system<br>
+      🎮 Solo &amp; Multiplayer game modes<br>
+      🪙 In-game coin rewards system
+    </p>
+    <span class="desc-more">Read more ▾</span>
+  </div>
+
+  <!-- ══════════ 4. FEATURES ══════════ -->
+  <div class="section-title">✨ Feature Highlights</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div>
+        <div class="feature-title">Quick Match Matchmaking</div>
+        <div class="feature-desc">Jump into a real-time 1v1 quiz battle instantly. Our smart matchmaking pairs you with opponents at your ELO level.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🦁</div>
+      <div>
+        <div class="feature-title">Challenge Friends</div>
+        <div class="feature-desc">Send direct challenges to friends. Create a room, choose category &amp; difficulty, and battle head-to-head.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗂️</div>
+      <div>
+        <div class="feature-title">10+ Knowledge Categories</div>
+        <div class="feature-desc">Science, History, Geography, Sports, Pop Culture and more. Each with Easy, Medium, and Hard difficulties.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏆</div>
+      <div>
+        <div class="feature-title">ELO Ranking System</div>
+        <div class="feature-desc">Compete for the top spot on the global leaderboard. Win matches to increase your ELO and unlock rank titles.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌍</div>
+      <div>
+        <div class="feature-title">Global Missions</div>
+        <div class="feature-desc">Complete weekly community missions like "Science Master" or "History Buff" and earn exclusive coin rewards.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👤</div>
+      <div>
+        <div class="feature-title">Player Profile &amp; Stats</div>
+        <div class="feature-desc">Track your match history, win rate, best category, level, and coin balance all in one personalized profile page.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div>
+        <div class="feature-title">Avatar Customization</div>
+        <div class="feature-desc">Express yourself with a wide selection of fun emoji avatars. Stand out on the leaderboard with your unique icon.</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🦓</div>
+      <div>
+        <div class="feature-title">Solo Practice Mode</div>
+        <div class="feature-desc">Practice at your own pace in Solo Mode. Perfect your knowledge in specific categories before challenging real opponents.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ RATINGS ══════════ -->
+  <div class="section-title">⭐ Ratings &amp; Reviews</div>
+  <div class="ratings-box">
+    <div class="big-rating">
+      <div class="num">4.8</div>
+      <div class="stars">★★★★★</div>
+      <div class="count">1,240 reviews</div>
+    </div>
+    <div class="bars">
+      <div class="bar-row"><span class="bar-label">5</span><div class="bar-track"><div class="bar-fill" style="width:78%"></div></div><span style="font-size:12px;color:#5f6368">78%</span></div>
+      <div class="bar-row"><span class="bar-label">4</span><div class="bar-track"><div class="bar-fill" style="width:14%"></div></div><span style="font-size:12px;color:#5f6368">14%</span></div>
+      <div class="bar-row"><span class="bar-label">3</span><div class="bar-track"><div class="bar-fill" style="width:5%;background:#e0e0e0"></div></div><span style="font-size:12px;color:#5f6368">5%</span></div>
+      <div class="bar-row"><span class="bar-label">2</span><div class="bar-track"><div class="bar-fill" style="width:2%;background:#e0e0e0"></div></div><span style="font-size:12px;color:#5f6368">2%</span></div>
+      <div class="bar-row"><span class="bar-label">1</span><div class="bar-track"><div class="bar-fill" style="width:1%;background:#e0e0e0"></div></div><span style="font-size:12px;color:#5f6368">1%</span></div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══════════ 5. ADDITIONAL DETAILS ══════════ -->
+  <div class="section-title">ℹ️ App Details</div>
+  <div class="details-box">
+    <div class="detail-row"><span class="detail-key">Version</span><span class="detail-val">1.0.0</span></div>
+    <div class="detail-row"><span class="detail-key">Updated</span><span class="detail-val">May 17, 2026</span></div>
+    <div class="detail-row"><span class="detail-key">Requires Android</span><span class="detail-val">8.0 and up</span></div>
+    <div class="detail-row"><span class="detail-key">Developer</span><span class="detail-val">QuizicheDev Studio</span></div>
+    <div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">Trivia / Educational</span></div>
+    <div class="detail-row"><span class="detail-key">Content Rating</span><span class="detail-val">Everyone (3+)</span></div>
+    <div class="detail-row"><span class="detail-key">In-App Purchases</span><span class="detail-val">Yes — Coin Packs (optional)</span></div>
+    <div class="detail-row"><span class="detail-key">Backend</span><span class="detail-val">Firebase Firestore &amp; Auth</span></div>
+    <div class="detail-row"><span class="detail-key">Multiplayer</span><span class="detail-val">Real-time (Firebase Realtime DB)</span></div>
+    <div class="detail-row"><span class="detail-key">Languages</span><span class="detail-val">English, Turkish</span></div>
+  </div>
+
+  <!-- ══════════ MONETIZATION ══════════ -->
+  <div class="section-title">💰 Monetization Plan</div>
+  <div class="info-box">
+    <h3>Free-to-Play with Optional In-App Purchases</h3>
+    <p style="margin-bottom:12px;">Quiziche is completely free to download and play. All core features — matchmaking, solo mode, leaderboard, and missions — are accessible without payment. The monetization model is designed to be fair and non-pay-to-win.</p>
+    <ul>
+      <li><strong>🪙 Coin Packs</strong> — Players can optionally purchase coin bundles to speed up avatar unlocks and cosmetic items. Coins are also freely earned by playing games and completing missions.</li>
+      <li><strong>🎨 Cosmetic Items</strong> — Premium avatar frames and profile badges available via the in-game shop. These are purely decorative and do not affect gameplay.</li>
+      <li><strong>🚀 Quiziche Pro (Future)</strong> — A planned optional subscription that removes ads (if introduced), provides a "Pro" profile badge, and grants a small monthly coin bonus.</li>
+      <li><strong>📢 Ads</strong> — Minimal, non-intrusive banner ads may appear in menus. Pro subscribers can opt out. No forced video ads during gameplay.</li>
+    </ul>
+  </div>
+
+  <!-- ══════════ PRIVACY POLICY ══════════ -->
+  <div class="section-title">🔒 Privacy Policy</div>
+  <div class="info-box">
+    <h3>Data We Collect</h3>
+    <p style="margin-bottom:12px;">Quiziche takes user privacy seriously. We collect only the minimum data required to provide our services:</p>
+    <ul>
+      <li><strong>Account Information</strong> — Email address and display name, collected at registration via Firebase Auth (email/password or Google Sign-In).</li>
+      <li><strong>Gameplay Data</strong> — Match results, scores, ELO ratings, and mission progress stored in Firebase Firestore to power leaderboards and profiles.</li>
+      <li><strong>Device Information</strong> — Anonymous device identifiers for crash reporting and analytics (non-personally identifiable).</li>
+      <li><strong>No Payment Data Stored</strong> — All in-app purchases are processed through Google Play. We do not store any payment or card information.</li>
+    </ul>
+    <p style="margin-top:12px; color:#5f6368;">Users may request deletion of all personal data at any time by contacting: <strong>privacy@quiziche.app</strong></p>
+  </div>
+
+  <!-- ══════════ PERMISSIONS ══════════ -->
+  <div class="section-title">🔐 Permissions Required</div>
+  <div class="info-box">
+    <div class="perm-row">
+      <div class="perm-icon">🌐</div>
+      <div class="perm-text"><div class="ptitle">INTERNET</div><div class="pdesc">Required for real-time multiplayer, leaderboard sync, and Firebase backend communication.</div></div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">📶</div>
+      <div class="perm-text"><div class="ptitle">ACCESS_NETWORK_STATE</div><div class="pdesc">Checks connectivity status before attempting online matchmaking to prevent errors.</div></div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">🔔</div>
+      <div class="perm-text"><div class="ptitle">POST_NOTIFICATIONS</div><div class="pdesc">Optional — used to notify players of incoming friend challenges and match invites.</div></div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">👤</div>
+      <div class="perm-text"><div class="ptitle">GET_ACCOUNTS (Google Sign-In)</div><div class="pdesc">Required only when the user chooses "Sign in with Google". Accesses Google account for authentication only.</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════ APP ICON SECTION ══════════ -->
+  <div class="section-title">🖼️ App Icon</div>
+  <div class="info-box" style="display:flex; align-items:center; gap:24px;">
+    <img src="Quiziche_App_Icon.png" alt="Quiziche App Icon" style="width:128px;height:128px;border-radius:24px;object-fit:cover;flex-shrink:0;border:2px solid #e0e0e0;box-shadow:0 4px 16px rgba(124,58,237,0.25);">
+    <div>
+      <h3 style="margin-bottom:8px;">Quiziche — Brain &amp; Battle</h3>
+      <p>Format: PNG · Size: 512×512 px (high-res 1024×1024 also provided)<br>
+      The icon features a glowing brain on a deep purple gradient background, symbolizing intelligence, fun, and the competitive spirit of Quiziche. Gold accents reflect the in-game coin &amp; reward system. The design is instantly recognizable at all sizes from app drawer icons to Play Store banners.</p>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <strong>Quiziche — Battle Quiz Game</strong> · Mock Play Store Listing · For Academic Submission<br>
+  Developer: QuizicheDev Studio · Contact: dev@quiziche.app · Privacy: privacy@quiziche.app<br>
+  © 2026 Quiziche. All rights reserved. This document is a simulated Google Play Store page.
+</footer>
+
+</body>
+</html>

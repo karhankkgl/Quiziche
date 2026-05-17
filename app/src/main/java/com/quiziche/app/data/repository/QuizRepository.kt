@@ -51,6 +51,23 @@ class QuizRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun deleteMockQuestions(): Result<Int> {
+        return try {
+            val snapshot = questionsCollection.get().await()
+            var deletedCount = 0
+            for (doc in snapshot.documents) {
+                val isAi = doc.getBoolean("isAiGenerated") ?: doc.getBoolean("aiGenerated") ?: false
+                if (!isAi) {
+                    questionsCollection.document(doc.id).delete().await()
+                    deletedCount++
+                }
+            }
+            Result.success(deletedCount)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     suspend fun getQuestionsByIds(ids: List<String>): Result<List<Question>> {
         return try {
             if (ids.isEmpty()) return Result.success(emptyList())
